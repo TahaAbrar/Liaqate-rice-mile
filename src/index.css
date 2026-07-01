@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "EB Garamond", ui-serif, Georgia, serif;
+  
+  --color-primary: #163422;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2d4b37;
+  --color-on-primary-container: #99baa1;
+  --color-primary-fixed: #c8ebd0;
+  --color-primary-fixed-dim: #adcfb4;
+  --color-on-primary-fixed-variant: #2f4d39;
+
+  --color-secondary: #735c00;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fed65b;
+  --color-on-secondary-container: #745c00;
+  --color-secondary-fixed: #ffe088;
+  --color-secondary-fixed-dim: #e9c349;
+
+  --color-background: #fcf9f8;
+  --color-on-background: #1c1b1b;
+  --color-surface: #fcf9f8;
+  --color-on-surface: #1c1b1b;
+  --color-on-surface-variant: #424843;
+  --color-surface-container: #f0eded;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-high: #eae7e7;
+  --color-surface-container-highest: #e5e2e1;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-outline: #727972;
+  --color-outline-variant: #c2c8c0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
+
+.font-serif-title {
+  font-family: var(--font-serif);
+}
+
+.grain-texture {
+  background-image: radial-gradient(#adcfb4 0.5px, transparent 0.5px);
+  background-size: 11px 11px;
+  opacity: 0.1;
+}
+
+.luxury-line::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 1px;
+  background: #735c00;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.luxury-line:hover::after {
+  width: 100%;
+}
+
