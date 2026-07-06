@@ -1,17 +1,14 @@
 import { ArrowRight, Shield, Award, Globe, CheckCircle, Settings, Sprout, Truck, Search } from "lucide-react";
-import { PRODUCTS, Product } from "../data";
+import { Product } from "../data";
 import { useAdminData } from "../context/AdminDataContext";
+import { ROUTES, useRouter } from "../lib/router";
+import { LocationMapEmbed } from "./LocationMap";
 
-interface HomeViewProps {
-  onSelectProduct: (productId: string) => void;
-  onNavigate: (screen: "home" | "about" | "products" | "export" | "admin-login") => void;
-}
-
-export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps) {
-  const { banners, legacySection, globalStandards, globalFootprint } = useAdminData();
+export default function HomeView() {
+  const { navigate } = useRouter();
+  const { banners, legacySection, globalStandards, globalFootprint, products } = useAdminData();
   
-  // Select first 3 products for showcase
-  const featuredProducts: Product[] = PRODUCTS.slice(0, 3);
+  const featuredProducts: Product[] = products.slice(0, 3);
 
   // Icon maps for dynamic standards box render
   const icons = [Search, Award, Settings, Truck];
@@ -46,14 +43,14 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <button
-                onClick={() => onNavigate("products")}
+                onClick={() => navigate(ROUTES.products)}
                 className="bg-primary text-white hover:bg-white hover:text-primary border border-primary px-8 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all duration-300 shadow-md"
               >
                 Explore Products 
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => onNavigate("export")}
+                onClick={() => navigate(ROUTES.export)}
                 className="border border-white/40 text-white hover:bg-white/10 px-8 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest transition-all duration-300"
               >
                 Export Inquiry
@@ -136,7 +133,7 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
             </ul>
             <div className="pt-4">
               <button
-                onClick={() => onNavigate("about")}
+                onClick={() => navigate(ROUTES.about)}
                 className="inline-flex items-center gap-2 font-sans font-bold text-sm text-primary hover:text-secondary group transition-all"
               >
                 Learn our history
@@ -188,7 +185,7 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
                     {product.description}
                   </p>
                   <button 
-                    onClick={() => onSelectProduct(product.id)}
+                    onClick={() => navigate(ROUTES.productDetail(product.id))}
                     className="w-full py-3 rounded-lg border border-primary text-primary hover:bg-primary hover:text-white font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300"
                   >
                     Specifications
@@ -214,7 +211,7 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
             </div>
             <div>
               <button 
-                onClick={() => onNavigate("about")}
+                onClick={() => navigate(ROUTES.about)}
                 className="text-secondary hover:text-primary font-sans text-xs font-bold uppercase tracking-widest flex items-center gap-2 group transition-colors"
               >
                 VIEW QUALITY PROTOCOLS
@@ -274,7 +271,7 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
             </div>
             <div className="pt-4">
               <button
-                onClick={() => onNavigate("export")}
+                onClick={() => navigate(ROUTES.export)}
                 className="bg-white text-primary hover:bg-secondary hover:text-white px-8 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:scale-105 shadow-md"
               >
                 Inquire for International Export
@@ -282,15 +279,19 @@ export default function HomeView({ onSelectProduct, onNavigate }: HomeViewProps)
             </div>
           </div>
 
-          {/* Map Image container */}
-          <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md p-4 shadow-2xl">
-            <div 
-              className="w-full h-full rounded-lg bg-cover bg-center transition-all duration-700 hover:scale-[1.02]"
-              style={{
-                backgroundImage: `url('${globalFootprint.mapImage}')`
-              }}
-              title="Elite Grain Global Logistics Trade Routes"
+          {/* Interactive location map */}
+          <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
+            <LocationMapEmbed
+              locationName={globalFootprint.locationName}
+              latitude={globalFootprint.latitude || "28.4202"}
+              longitude={globalFootprint.longitude || "70.2989"}
+              className="rounded-2xl"
             />
+            {globalFootprint.locationName && (
+              <div className="absolute bottom-3 left-3 bg-primary/90 text-white text-[10px] font-sans font-bold uppercase tracking-wider px-3 py-1.5 rounded-md">
+                {globalFootprint.locationName}
+              </div>
+            )}
           </div>
         </div>
       </section>

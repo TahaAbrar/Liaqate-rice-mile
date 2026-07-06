@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { Mail, Phone, MapPin, Send, CheckCircle2, FileText, Globe, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
+import { ROUTES, useRouter } from "../lib/router";
 
 interface ExportViewProps {
-  onNavigate: (screen: "home" | "about" | "products" | "export") => void;
   onRequestQuote: () => void;
 }
 
-export default function ExportView({ onNavigate, onRequestQuote }: ExportViewProps) {
+export default function ExportView({ onRequestQuote }: ExportViewProps) {
+  const { navigate } = useRouter();
   const { banners, exportPageContent } = useAdminData();
   const [formData, setFormData] = useState({
     name: "",
@@ -62,7 +63,7 @@ export default function ExportView({ onNavigate, onRequestQuote }: ExportViewPro
             </p>
             <div className="flex flex-wrap gap-4 pt-4">
               <button
-                onClick={() => onNavigate("products")}
+                onClick={() => navigate(ROUTES.products)}
                 className="bg-white text-primary hover:bg-secondary hover:text-white px-8 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest hover:scale-105 transition-transform duration-300 shadow-md"
               >
                 Explore Portfolio
@@ -303,20 +304,21 @@ export default function ExportView({ onNavigate, onRequestQuote }: ExportViewPro
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
             <div className="max-w-md space-y-3">
               <h2 className="font-serif-title text-2xl sm:text-3xl text-white font-medium leading-snug">
-                Certified Quality for Global Markets
+                {exportPageContent.certificationsSectionTitle || "Certified Quality for Global Markets"}
               </h2>
               <p className="text-primary-fixed-dim font-sans text-sm">
-                We strictly maintain the highest international standards for food safety, operational management, and plant inspection.
+                {exportPageContent.certificationsSectionDesc ||
+                  "We strictly maintain the highest international standards for food safety, operational management, and plant inspection."}
               </p>
             </div>
-            
+
             <div className="flex flex-wrap justify-center gap-6 sm:gap-12">
-              {[
+              {(exportPageContent.certificationBadges || [
                 { name: "ISO 9001:2015", subtitle: "Quality Systems" },
                 { name: "HACCP Certified", subtitle: "Food Safety" },
                 { name: "FDA Registered", subtitle: "US Compliance" },
-                { name: "HALAL Certified", subtitle: "Islamic Audit" }
-              ].map((cert) => (
+                { name: "HALAL Certified", subtitle: "Islamic Audit" },
+              ]).map((cert) => (
                 <div key={cert.name} className="flex flex-col items-center gap-3">
                   <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center border border-white/20 shadow-sm text-secondary-fixed">
                     <ShieldCheck className="w-7 h-7" />

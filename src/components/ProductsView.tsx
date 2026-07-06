@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { PRODUCTS, Product } from "../data";
+import { Product } from "../data";
 import { Download, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
+import { ROUTES, useRouter } from "../lib/router";
 
 interface ProductsViewProps {
-  onSelectProduct: (productId: string) => void;
   onRequestQuote: () => void;
 }
 
-export default function ProductsView({ onSelectProduct, onRequestQuote }: ProductsViewProps) {
-  const { productPageContent } = useAdminData();
+export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
+  const { navigate } = useRouter();
+  const { productPageContent, products } = useAdminData();
   const [activeFilter, setActiveFilter] = useState<"All" | "Basmati" | "Non-Basmati" | "Premium Export" | "Sella">("All");
 
   const filterItems = [
@@ -20,7 +21,7 @@ export default function ProductsView({ onSelectProduct, onRequestQuote }: Produc
     { id: "Sella", label: "Sella" },
   ] as const;
 
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     if (activeFilter === "All") return true;
     if (activeFilter === "Premium Export") {
       return product.badges.includes("Premium Export") || product.grade === "PREMIUM";
@@ -71,7 +72,7 @@ export default function ProductsView({ onSelectProduct, onRequestQuote }: Produc
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              onClick={() => onSelectProduct(product.id)}
+              onClick={() => navigate(ROUTES.productDetail(product.id))}
               className="group cursor-pointer flex flex-col bg-white border border-outline-variant/20 hover:border-primary/40 p-5 rounded-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
             >
               {/* Image container */}
@@ -139,14 +140,14 @@ export default function ProductsView({ onSelectProduct, onRequestQuote }: Produc
                 onClick={() => alert("Elite Grain Brochure download started! Check your downloads.")}
                 className="bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90 px-8 py-3.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-105 transition-all duration-300"
               >
-                Download Brochure
+                {productPageContent.downloadBrochureLabel || "Download Brochure"}
                 <Download className="w-4 h-4" />
               </button>
               <button 
                 onClick={onRequestQuote}
                 className="border border-white/40 text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300"
               >
-                Talk to an Expert
+                {productPageContent.talkToExpertLabel || "Talk to an Expert"}
               </button>
             </div>
           </div>
@@ -156,32 +157,32 @@ export default function ProductsView({ onSelectProduct, onRequestQuote }: Produc
             <div className="absolute -inset-4 bg-secondary-fixed/5 blur-3xl rounded-full"></div>
             <div className="relative bg-primary-container p-8 rounded-2xl border border-outline/10 shadow-xl space-y-6">
               <h4 className="font-serif-title text-2xl font-medium text-white pb-3 border-b border-white/10">
-                Inquiry Dashboard
+                {productPageContent.inquiryDashboardTitle || "Inquiry Dashboard"}
               </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-5 bg-primary/30 rounded-xl border border-outline-variant/10">
                   <span className="block font-sans text-[11px] font-bold text-primary-fixed-dim uppercase tracking-wider">
-                    Monthly Capacity
+                    {productPageContent.monthlyCapacityLabel || "Monthly Capacity"}
                   </span>
                   <span className="text-2xl sm:text-3xl font-semibold text-white block mt-2">
-                    15,000 MT
+                    {productPageContent.monthlyCapacityValue || "15,000 MT"}
                   </span>
                 </div>
                 <div className="p-5 bg-primary/30 rounded-xl border border-outline-variant/10">
                   <span className="block font-sans text-[11px] font-bold text-primary-fixed-dim uppercase tracking-wider">
-                    Export Markets
+                    {productPageContent.exportMarketsLabel || "Export Markets"}
                   </span>
                   <span className="text-2xl sm:text-3xl font-semibold text-white block mt-2">
-                    45+ Countries
+                    {productPageContent.exportMarketsValue || "45+ Countries"}
                   </span>
                 </div>
               </div>
               <div className="p-5 bg-primary/30 rounded-xl border border-outline-variant/10 space-y-3">
                 <span className="block font-sans text-[11px] font-bold text-primary-fixed-dim uppercase tracking-wider">
-                  Quality Certifications
+                  {productPageContent.certificationsLabel || "Quality Certifications"}
                 </span>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {["ISO 9001", "HACCP", "FDA APPROVED", "HALAL"].map((cert) => (
+                  {(productPageContent.certifications || ["ISO 9001", "HACCP", "FDA APPROVED", "HALAL"]).map((cert) => (
                     <span
                       key={cert}
                       className="bg-white/15 px-3 py-1 text-[10px] font-sans font-bold uppercase tracking-wider rounded-md text-white"

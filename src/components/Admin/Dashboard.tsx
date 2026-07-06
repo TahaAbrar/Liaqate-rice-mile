@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useAdminData } from "../../context/AdminDataContext";
+import type { SectionKey } from "../../api";
+import ImagePicker from "./ImagePicker";
+import LocationMapPicker from "./LocationMapPicker";
 import { 
   Layout, 
   FileText, 
@@ -51,15 +54,54 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     productPageContent,
     exportPageContent,
     updateData,
+    saveSection,
     resetToDefault,
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("banners");
   const [successMsg, setSuccessMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const TAB_SECTION_MAP: Record<ActiveTab, SectionKey> = {
+    banners: "banners",
+    heritage: "legacySection",
+    standards: "globalStandards",
+    footprint: "globalFootprint",
+    philosophy: "corePhilosophy",
+    process: "millProcess",
+    ceo: "ceoSection",
+    products: "productPageContent",
+    export_all: "exportPageContent",
+  };
+
+  const TAB_LABELS: Record<ActiveTab, string> = {
+    banners: "Banner Heroes",
+    heritage: "Heritage of Purity",
+    standards: "Global Standards",
+    footprint: "Global Footprint",
+    philosophy: "Philosophy & Mission",
+    process: "The Mill Process",
+    ceo: "CEO Profile",
+    products: "Products Page",
+    export_all: "Export Capabilities",
+  };
 
   const triggerSuccess = (msg: string) => {
     setSuccessMsg(msg);
     setTimeout(() => setSuccessMsg(""), 4000);
+  };
+
+  const handleSaveCurrentSection = async () => {
+    const key = TAB_SECTION_MAP[activeTab];
+    setSaving(true);
+    try {
+      await saveSection(key);
+      triggerSuccess(`${TAB_LABELS[activeTab]} saved to backend successfully!`);
+    } catch {
+      triggerSuccess(`Failed to save ${TAB_LABELS[activeTab]}. Is the backend running?`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Safe handlers for nested edits
@@ -67,13 +109,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     const updated = { ...banners };
     updated[page] = { ...updated[page], [field]: val };
     updateData("banners", updated);
-    triggerSuccess(`Successfully updated ${page} banner content!`);
   };
 
   const handleLegacyChange = (field: string, val: any) => {
     const updated = { ...legacySection, [field]: val };
     updateData("legacySection", updated);
-    triggerSuccess("Successfully updated Heritage of Purity content!");
   };
 
   const handleLegacyBulletChange = (idx: number, val: string) => {
@@ -85,7 +125,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const handleStandardsChange = (field: string, val: any) => {
     const updated = { ...globalStandards, [field]: val };
     updateData("globalStandards", updated);
-    triggerSuccess("Successfully updated Global Standards description!");
   };
 
   const handleStandardsBoxChange = (idx: number, field: "title" | "desc", val: string) => {
@@ -97,19 +136,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const handleFootprintChange = (field: string, val: any) => {
     const updated = { ...globalFootprint, [field]: val };
     updateData("globalFootprint", updated);
-    triggerSuccess("Successfully updated Global Footprint metrics!");
   };
 
   const handlePhilosophyChange = (field: string, val: any) => {
     const updated = { ...corePhilosophy, [field]: val };
     updateData("corePhilosophy", updated);
-    triggerSuccess("Successfully updated About Philosophy & Mission!");
   };
 
   const handleMillProcessChange = (field: string, val: any) => {
     const updated = { ...millProcess, [field]: val };
     updateData("millProcess", updated);
-    triggerSuccess("Successfully updated The Mill Process heading!");
   };
 
   const handleMillProcessStepChange = (idx: number, field: "title" | "description" | "image", val: string) => {
@@ -121,19 +157,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const handleCeoChange = (field: string, val: string) => {
     const updated = { ...ceoSection, [field]: val };
     updateData("ceoSection", updated);
-    triggerSuccess("Successfully updated CEO message profile!");
   };
 
-  const handleProductsPageChange = (field: string, val: string) => {
+  const handleProductsPageChange = (field: string, val: string | string[]) => {
     const updated = { ...productPageContent, [field]: val };
     updateData("productPageContent", updated);
-    triggerSuccess("Successfully updated Products Page description!");
   };
 
   const handleExportPageChange = (field: string, val: any) => {
     const updated = { ...exportPageContent, [field]: val };
     updateData("exportPageContent", updated);
-    triggerSuccess("Successfully updated Export Capabilities section!");
   };
 
   const handleExportIncotermChange = (idx: number, val: string) => {
@@ -148,10 +181,35 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     handleExportPageChange("docs", updated);
   };
 
+  const handleLegacyImageChange = (idx: number, val: string) => {
+    const updatedImages = [...legacySection.images];
+    updatedImages[idx] = val;
+    handleLegacyChange("images", updatedImages);
+  };
+
+  const handleProductCertChange = (idx: number, val: string) => {
+    const updated = [...(productPageContent.certifications || [])];
+    updated[idx] = val;
+    handleProductsPageChange("certifications", updated);
+  };
+
   const handleExportLifecycleStepChange = (idx: number, field: "title" | "desc", val: string) => {
     const updatedSteps = [...exportPageContent.lifecycleSteps];
     updatedSteps[idx] = { ...updatedSteps[idx], [field]: val };
     handleExportPageChange("lifecycleSteps", updatedSteps);
+  };
+
+  const defaultCertBadges = [
+    { name: "ISO 9001:2015", subtitle: "Quality Systems" },
+    { name: "HACCP Certified", subtitle: "Food Safety" },
+    { name: "FDA Registered", subtitle: "US Compliance" },
+    { name: "HALAL Certified", subtitle: "Islamic Audit" },
+  ];
+
+  const handleExportCertBadgeChange = (idx: number, field: "name" | "subtitle", val: string) => {
+    const badges = [...(exportPageContent.certificationBadges || defaultCertBadges)];
+    badges[idx] = { ...badges[idx], [field]: val };
+    handleExportPageChange("certificationBadges", badges);
   };
 
   return (
@@ -256,7 +314,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </h2>
             </div>
             <span className="text-[10px] font-sans text-slate-400">
-              Auto-saves to Session Storage
+              Edit below, then click Save to persist to backend
             </span>
           </div>
 
@@ -297,17 +355,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase flex items-center gap-1.5">
-                      <ImageIcon className="w-3 h-3 text-slate-400" /> Banner Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={banners.home.image}
-                      onChange={(e) => handleBannerChange("home", "image", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
+                  <ImagePicker
+                    label="Home Banner Image"
+                    value={banners.home.image}
+                    onChange={(url) => handleBannerChange("home", "image", url)}
+                  />
                 </div>
 
                 {/* About Banner */}
@@ -342,17 +394,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase flex items-center gap-1.5">
-                      <ImageIcon className="w-3 h-3 text-slate-400" /> Banner Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={banners.about.image}
-                      onChange={(e) => handleBannerChange("about", "image", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
+                  <ImagePicker
+                    label="About Banner Image"
+                    value={banners.about.image}
+                    onChange={(url) => handleBannerChange("about", "image", url)}
+                  />
                 </div>
 
                 {/* Export Banner */}
@@ -387,17 +433,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase flex items-center gap-1.5">
-                      <ImageIcon className="w-3 h-3 text-slate-400" /> Banner Image URL
-                    </label>
-                    <input
-                      type="text"
-                      value={banners.export.image}
-                      onChange={(e) => handleBannerChange("export", "image", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
+                  <ImagePicker
+                    label="Export Banner Image"
+                    value={banners.export.image}
+                    onChange={(url) => handleBannerChange("export", "image", url)}
+                  />
                 </div>
               </div>
             )}
@@ -481,6 +521,21 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       onChange={(e) => handleLegacyChange("yearsLabel", e.target.value)}
                       className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
                     />
+                  </div>
+                </div>
+
+                {/* Heritage collage images */}
+                <div className="space-y-4 pt-4 border-t border-outline-variant/20">
+                  <h3 className="font-serif-title text-base text-secondary font-semibold">Heritage Collage Images (4 photos)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {legacySection.images.map((img, idx) => (
+                      <ImagePicker
+                        key={idx}
+                        label={`Collage Image ${idx + 1}`}
+                        value={img}
+                        onChange={(url) => handleLegacyImageChange(idx, url)}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -599,17 +654,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase flex items-center gap-1.5">
-                    <ImageIcon className="w-3 h-3 text-slate-400" /> Footprint Map Image URL
-                  </label>
-                  <input
-                    type="text"
-                    value={globalFootprint.mapImage}
-                    onChange={(e) => handleFootprintChange("mapImage", e.target.value)}
-                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                  />
-                </div>
+                <LocationMapPicker
+                  locationName={globalFootprint.locationName || ""}
+                  latitude={globalFootprint.latitude || "28.4202"}
+                  longitude={globalFootprint.longitude || "70.2989"}
+                  onLocationNameChange={(val) => handleFootprintChange("locationName", val)}
+                  onLatitudeChange={(val) => handleFootprintChange("latitude", val)}
+                  onLongitudeChange={(val) => handleFootprintChange("longitude", val)}
+                />
               </div>
             )}
 
@@ -705,24 +757,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Left Image URL</label>
-                    <input
-                      type="text"
-                      value={corePhilosophy.leftImage}
-                      onChange={(e) => handlePhilosophyChange("leftImage", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Right Image URL</label>
-                    <input
-                      type="text"
-                      value={corePhilosophy.rightImage}
-                      onChange={(e) => handlePhilosophyChange("rightImage", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
+                  <ImagePicker
+                    label="Philosophy Left Image"
+                    value={corePhilosophy.leftImage}
+                    onChange={(url) => handlePhilosophyChange("leftImage", url)}
+                  />
+                  <ImagePicker
+                    label="Philosophy Right Image"
+                    value={corePhilosophy.rightImage}
+                    onChange={(url) => handlePhilosophyChange("rightImage", url)}
+                  />
                 </div>
               </div>
             )}
@@ -781,15 +825,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                               className="w-full border border-outline-variant rounded-lg p-2 text-xs font-sans bg-white focus:outline-none focus:border-primary"
                             />
                           </div>
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-bold text-on-surface-variant uppercase">Step Image Link</label>
-                            <input
-                              type="text"
-                              value={step.image}
-                              onChange={(e) => handleMillProcessStepChange(idx, "image", e.target.value)}
-                              className="w-full border border-outline-variant rounded-lg p-2 text-xs font-mono bg-white focus:outline-none focus:border-primary"
-                            />
-                          </div>
+                          <ImagePicker
+                            label={`Step ${step.step} Image`}
+                            value={step.image}
+                            onChange={(url) => handleMillProcessStepChange(idx, "image", url)}
+                          />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[9px] font-bold text-on-surface-variant uppercase">Step Description Text</label>
@@ -842,16 +882,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase flex items-center gap-1.5">
-                    <ImageIcon className="w-3 h-3 text-slate-400" /> CEO Portrait Image URL
-                  </label>
-                  <input
-                    type="text"
-                    value={ceoSection.image}
-                    onChange={(e) => handleCeoChange("image", e.target.value)}
-                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-mono bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">CEO Description / Bio</label>
+                  <textarea
+                    value={ceoSection.description || ""}
+                    rows={5}
+                    onChange={(e) => handleCeoChange("description", e.target.value)}
+                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
                   />
                 </div>
+
+                <ImagePicker
+                  label="CEO Portrait Image"
+                  value={ceoSection.image}
+                  onChange={(url) => handleCeoChange("image", url)}
+                />
               </div>
             )}
 
@@ -909,6 +953,99 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       onChange={(e) => handleProductsPageChange("bespokeDesc", e.target.value)}
                       className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary resize-none"
                     />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Download Brochure Button</label>
+                      <input
+                        type="text"
+                        value={productPageContent.downloadBrochureLabel || "Download Brochure"}
+                        onChange={(e) => handleProductsPageChange("downloadBrochureLabel", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Talk to Expert Button</label>
+                      <input
+                        type="text"
+                        value={productPageContent.talkToExpertLabel || "Talk to an Expert"}
+                        onChange={(e) => handleProductsPageChange("talkToExpertLabel", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inquiry Dashboard */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-outline-variant/30 space-y-4">
+                  <h4 className="font-serif-title text-sm text-secondary font-bold">Inquiry Dashboard Panel</h4>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Dashboard Title</label>
+                    <input
+                      type="text"
+                      value={productPageContent.inquiryDashboardTitle || "Inquiry Dashboard"}
+                      onChange={(e) => handleProductsPageChange("inquiryDashboardTitle", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Monthly Capacity Label</label>
+                      <input
+                        type="text"
+                        value={productPageContent.monthlyCapacityLabel || "Monthly Capacity"}
+                        onChange={(e) => handleProductsPageChange("monthlyCapacityLabel", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Monthly Capacity Value</label>
+                      <input
+                        type="text"
+                        value={productPageContent.monthlyCapacityValue || "15,000 MT"}
+                        onChange={(e) => handleProductsPageChange("monthlyCapacityValue", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Export Markets Label</label>
+                      <input
+                        type="text"
+                        value={productPageContent.exportMarketsLabel || "Export Markets"}
+                        onChange={(e) => handleProductsPageChange("exportMarketsLabel", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Export Markets Value</label>
+                      <input
+                        type="text"
+                        value={productPageContent.exportMarketsValue || "45+ Countries"}
+                        onChange={(e) => handleProductsPageChange("exportMarketsValue", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Certifications Section Label</label>
+                    <input
+                      type="text"
+                      value={productPageContent.certificationsLabel || "Quality Certifications"}
+                      onChange={(e) => handleProductsPageChange("certificationsLabel", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase block">Certification Badges</label>
+                    {(productPageContent.certifications || ["ISO 9001", "HACCP", "FDA APPROVED", "HALAL"]).map((cert, idx) => (
+                      <input
+                        key={idx}
+                        type="text"
+                        value={cert}
+                        onChange={(e) => handleProductCertChange(idx, e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -1071,9 +1208,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   </div>
                 </div>
 
+                {/* Logistics Technology Card */}
+                <div className="p-4 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-4">
+                  <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">5. Logistics Technology Card</h3>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Card Heading</label>
+                    <input
+                      type="text"
+                      value={exportPageContent.cardLogisticsHeading}
+                      onChange={(e) => handleExportPageChange("cardLogisticsHeading", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Card Description</label>
+                    <textarea
+                      value={exportPageContent.cardLogisticsDesc}
+                      rows={3}
+                      onChange={(e) => handleExportPageChange("cardLogisticsDesc", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary resize-none"
+                    />
+                  </div>
+                  <ImagePicker
+                    label="Logistics Card Image"
+                    value={exportPageContent.cardLogisticsImage}
+                    onChange={(url) => handleExportPageChange("cardLogisticsImage", url)}
+                  />
+                </div>
+
                 {/* Supply chain section */}
                 <div className="p-4 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-4">
-                  <h4 className="font-serif-title text-sm text-secondary font-bold">5. Global Supply Chain Section</h4>
+                  <h4 className="font-serif-title text-sm text-secondary font-bold">6. Global Supply Chain Section</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-on-surface-variant uppercase">Section title</label>
@@ -1125,9 +1290,62 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                   </div>
                 </div>
 
+                {/* Certified Quality Section */}
+                <div className="p-4 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-4">
+                  <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">
+                    7. Certified Quality for Global Markets
+                  </h3>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Section Heading</label>
+                    <input
+                      type="text"
+                      value={exportPageContent.certificationsSectionTitle || "Certified Quality for Global Markets"}
+                      onChange={(e) => handleExportPageChange("certificationsSectionTitle", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">Section Description</label>
+                    <textarea
+                      value={exportPageContent.certificationsSectionDesc || ""}
+                      rows={3}
+                      onChange={(e) => handleExportPageChange("certificationsSectionDesc", e.target.value)}
+                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary resize-none"
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold text-on-surface-variant uppercase block">Certification Badges (4 items)</span>
+                    {(exportPageContent.certificationBadges || defaultCertBadges).map((badge, idx) => (
+                      <div key={idx} className="p-4 bg-white border border-outline-variant/30 rounded-xl space-y-3">
+                        <span className="text-xs font-bold font-sans text-primary">Badge {idx + 1}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-on-surface-variant uppercase">Certification Title</label>
+                            <input
+                              type="text"
+                              value={badge.name}
+                              onChange={(e) => handleExportCertBadgeChange(idx, "name", e.target.value)}
+                              className="w-full border border-outline-variant rounded-lg p-2 text-xs font-sans bg-slate-50 focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[9px] font-bold text-on-surface-variant uppercase">Subtitle / Category</label>
+                            <input
+                              type="text"
+                              value={badge.subtitle}
+                              onChange={(e) => handleExportCertBadgeChange(idx, "subtitle", e.target.value)}
+                              className="w-full border border-outline-variant rounded-lg p-2 text-xs font-sans bg-slate-50 focus:outline-none focus:border-primary"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Export Lifecycle workflow */}
                 <div className="space-y-4">
-                  <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">6. Export Lifecycle (4 Workflow Steps)</h3>
+                  <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">8. Export Lifecycle (4 Workflow Steps)</h3>
                   <div className="space-y-4">
                     {exportPageContent.lifecycleSteps.map((step, idx) => (
                       <div key={idx} className="p-4 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-3">
@@ -1156,6 +1374,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Per-section Save button */}
+          <div className="bg-slate-50 px-6 py-4 border-t border-outline-variant/30 flex justify-between items-center">
+            <p className="text-[10px] font-sans text-slate-500">
+              Changes preview live. Click Save to store <strong>{TAB_LABELS[activeTab]}</strong> in the database.
+            </p>
+            <button
+              type="button"
+              onClick={handleSaveCurrentSection}
+              disabled={saving}
+              className="px-6 py-2.5 bg-primary hover:bg-primary-container disabled:opacity-60 text-white rounded-lg text-xs font-sans font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm"
+            >
+              {saving ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Save {TAB_LABELS[activeTab]}
+            </button>
           </div>
         </div>
       </div>

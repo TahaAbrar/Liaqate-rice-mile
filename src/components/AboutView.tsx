@@ -1,12 +1,10 @@
-import { Sprout, Filter, Layers, Globe, Mail, Send, Linkedin } from "lucide-react";
+import { Sprout, Filter, Layers, Globe, Mail, Linkedin } from "lucide-react";
 import { TEAM_MEMBERS } from "../data";
 import { useAdminData } from "../context/AdminDataContext";
+import { ROUTES, useRouter } from "../lib/router";
 
-interface AboutViewProps {
-  onNavigate: (screen: "home" | "about" | "products" | "export") => void;
-}
-
-export default function AboutView({ onNavigate }: AboutViewProps) {
+export default function AboutView() {
+  const { navigate } = useRouter();
   const { banners, corePhilosophy, millProcess, ceoSection } = useAdminData();
 
   // Dynamic icons map for process step icons
@@ -55,7 +53,7 @@ export default function AboutView({ onNavigate }: AboutViewProps) {
                 Discover our Legacy
               </button>
               <button 
-                onClick={() => onNavigate("export")}
+                onClick={() => navigate(ROUTES.export)}
                 className="border border-white/30 text-white hover:bg-white/10 px-8 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest backdrop-blur-sm transition-all"
               >
                 Export Report
@@ -218,7 +216,7 @@ export default function AboutView({ onNavigate }: AboutViewProps) {
               "{ceoSection.quote}"
             </h2>
             <p className="font-sans text-base text-on-surface-variant leading-relaxed">
-              At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise. As we look to the next century, we are integrating smart milling technology and advanced optical sorting into our heritage practices to ensure sustainability for generations to come.
+              {ceoSection.description || "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise."}
             </p>
             <div>
               <p className="font-serif-title text-2xl text-primary font-semibold">{ceoSection.name}</p>
@@ -259,37 +257,6 @@ export default function AboutView({ onNavigate }: AboutViewProps) {
               )}
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-24 bg-white border-t border-outline-variant/10">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
-          <h2 className="font-serif-title text-3xl sm:text-4xl text-primary font-medium">Stay Informed</h2>
-          <p className="font-sans text-base text-on-surface-variant max-w-xl mx-auto">
-            Subscribe to our global newsletter for seasonal harvest reports, market price updates, and trade insights.
-          </p>
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert("Thank you for subscribing to our harvest insights!");
-            }} 
-            className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-4"
-          >
-            <input 
-              type="email" 
-              required
-              placeholder="Enter your corporate email address" 
-              className="bg-surface-container-low border-0 border-b border-outline focus:ring-0 focus:border-primary px-4 py-3 text-sm rounded-lg flex-grow"
-            />
-            <button 
-              type="submit" 
-              className="bg-primary hover:bg-primary-container text-white px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-            >
-              Subscribe
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
         </div>
       </section>
     </div>

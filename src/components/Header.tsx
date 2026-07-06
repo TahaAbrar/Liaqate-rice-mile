@@ -1,29 +1,31 @@
 import { Wheat, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { matchPath, ROUTES, useRouter } from "../lib/router";
 
 interface HeaderProps {
-  currentScreen: string;
-  onNavigate: (screen: any) => void;
   onRequestQuote: () => void;
 }
 
-export default function Header({ currentScreen, onNavigate, onRequestQuote }: HeaderProps) {
+export default function Header({ onRequestQuote }: HeaderProps) {
+  const { path, navigate } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: "home", label: "Home" },
-    { id: "about", label: "About" },
-    { id: "products", label: "Product" },
-    { id: "export", label: "Export" },
+    { id: ROUTES.home, label: "Home" },
+    { id: ROUTES.about, label: "About" },
+    { id: ROUTES.products, label: "Product" },
+    { id: ROUTES.export, label: "Export" },
   ] as const;
+
+  const isActive = (route: string) =>
+    path === route || (route === ROUTES.products && matchPath("/products/:slug", path));
 
   return (
     <header className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-outline-variant/10 shadow-sm transition-all duration-300">
       <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-4">
-        {/* Logo */}
-        <div 
+        <div
           className="flex items-center gap-3 cursor-pointer select-none group"
-          onClick={() => onNavigate("home")}
+          onClick={() => navigate(ROUTES.home)}
           id="brand-logo"
         >
           <Wheat className="text-primary w-8 h-8 transition-transform duration-500 group-hover:rotate-12" />
@@ -32,14 +34,13 @@ export default function Header({ currentScreen, onNavigate, onRequestQuote }: He
           </span>
         </div>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => navigate(item.id)}
               className={`font-sans font-medium text-base transition-all duration-300 relative pb-1 ${
-                currentScreen === item.id || (item.id === "products" && currentScreen === "product-detail")
+                isActive(item.id)
                   ? "text-primary font-semibold border-b-2 border-primary"
                   : "text-on-surface-variant hover:text-primary hover:scale-105"
               }`}
@@ -49,7 +50,6 @@ export default function Header({ currentScreen, onNavigate, onRequestQuote }: He
           ))}
         </nav>
 
-        {/* Request Quotation Button */}
         <div className="hidden md:block">
           <button
             onClick={onRequestQuote}
@@ -59,7 +59,6 @@ export default function Header({ currentScreen, onNavigate, onRequestQuote }: He
           </button>
         </div>
 
-        {/* Mobile Menu Toggle */}
         <button
           className="md:hidden text-primary p-1 focus:outline-none"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -68,18 +67,17 @@ export default function Header({ currentScreen, onNavigate, onRequestQuote }: He
         </button>
       </div>
 
-      {/* Mobile Navigation Panel */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-outline-variant/20 px-6 py-4 flex flex-col gap-4 animate-fadeIn">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => {
-                onNavigate(item.id);
+                navigate(item.id);
                 setMobileMenuOpen(false);
               }}
               className={`text-left font-sans font-medium py-2 px-3 rounded-lg transition-colors text-base ${
-                currentScreen === item.id || (item.id === "products" && currentScreen === "product-detail")
+                isActive(item.id)
                   ? "bg-primary/5 text-primary font-semibold"
                   : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
               }`}

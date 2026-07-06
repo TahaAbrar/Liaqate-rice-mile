@@ -1,6 +1,6 @@
 import { X, Send, CheckCircle } from "lucide-react";
 import React, { useState } from "react";
-import { PRODUCTS } from "../data";
+import { useAdminData } from "../context/AdminDataContext";
 
 interface QuotationModalProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface QuotationModalProps {
 }
 
 export default function QuotationModal({ isOpen, onClose }: QuotationModalProps) {
+  const { products } = useAdminData();
   const [formData, setFormData] = useState({
     contactName: "",
     companyName: "",
@@ -144,7 +145,7 @@ export default function QuotationModal({ isOpen, onClose }: QuotationModalProps)
                     onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                     className="w-full bg-surface-container-low border-0 border-b border-outline focus:ring-0 focus:border-primary py-2.5 px-3 text-sm transition-colors rounded-sm"
                   >
-                    {PRODUCTS.map((prod) => (
+                    {products.map((prod) => (
                       <option key={prod.id} value={prod.name}>
                         {prod.name}
                       </option>

@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import type { Product } from "../data";
+import { PRODUCTS as DEFAULT_PRODUCTS } from "../data";
+import {
+  fetchAllContent,
+  fetchProducts,
+  saveSection as apiSaveSection,
+  type SectionKey,
+} from "../api";
 
 // Types for customizable items
 export interface Banner {
@@ -37,6 +45,9 @@ export interface GlobalFootprint {
   countriesCount: string;
   tonsCount: string;
   mapImage: string;
+  locationName: string;
+  latitude: string;
+  longitude: string;
 }
 
 export interface CorePhilosophy {
@@ -68,6 +79,7 @@ export interface MillProcess {
 
 export interface CeoSection {
   quote: string;
+  description: string;
   name: string;
   rank: string;
   image: string;
@@ -79,6 +91,20 @@ export interface ProductPageContent {
   desc: string;
   bespokeTitle: string;
   bespokeDesc: string;
+  downloadBrochureLabel: string;
+  talkToExpertLabel: string;
+  inquiryDashboardTitle: string;
+  monthlyCapacityLabel: string;
+  monthlyCapacityValue: string;
+  exportMarketsLabel: string;
+  exportMarketsValue: string;
+  certificationsLabel: string;
+  certifications: string[];
+}
+
+export interface ExportCertificationBadge {
+  name: string;
+  subtitle: string;
 }
 
 export interface ExportLifecycleStep {
@@ -115,6 +141,9 @@ export interface ExportPageContent {
   lifecycleTitle: string;
   lifecycleDesc: string;
   lifecycleSteps: ExportLifecycleStep[];
+  certificationsSectionTitle: string;
+  certificationsSectionDesc: string;
+  certificationBadges: ExportCertificationBadge[];
 }
 
 export interface AdminDataContextType {
@@ -131,8 +160,12 @@ export interface AdminDataContextType {
   ceoSection: CeoSection;
   productPageContent: ProductPageContent;
   exportPageContent: ExportPageContent;
-  updateData: (key: string, value: any) => void;
+  products: Product[];
+  loading: boolean;
+  updateData: (key: string, value: unknown) => void;
+  saveSection: (key: SectionKey) => Promise<void>;
   resetToDefault: () => void;
+  refreshFromBackend: () => Promise<void>;
 }
 
 const DEFAULT_DATA = {
@@ -172,7 +205,7 @@ const DEFAULT_DATA = {
       "https://lh3.googleusercontent.com/aida-public/AB6AXuDVWueDBCFd1owMqfqegNt-HbeBq5ZOR5rLHuzVpnC0rgC9z45Uo36qOutxzonLPqizUs3tlVr4geaqjVG6UtYLjbS4VmUJ-5eGQkpYVuc-yhFGoDDG0PMJhMNuwADEQcUjUw2uEiyQPpamVuTdaLPOq_jPAOWMHOBCUiY22SyZxgrD1XPARtGBAFz6fqKILat0vXmhPQv0I-enkz06anV8sWukbiDTlvmPbDNmZywIQtJ3McD0zXK0cqW_4pymwqfrP4k3Thvz2Ac",
       "https://lh3.googleusercontent.com/aida-public/AB6AXuAz_1thT9uLeV-AjPmcqkqibTk4zZYcDq3JMvk34qJjlzarpbQOhvpbaOig1aIRUg7rr22v--PigyMsZyoqsHGn-xWx9zw61Coz4v6ExYEEIZlBe0qrkA8vtsWOD3GnQHDGZMbovFG1EbNspOMCpJxLxKzF7pjerHqIk4QBTPI_3I9qNc5sh06pUj94jtCM856MmVPiXxI4Zdj-7gZePAD82FSvBHBjT1bvrbzS4gRLtoX5ncpm81OPsGo1QTLOoQMrh6lNK1geOxg",
       "https://lh3.googleusercontent.com/aida-public/AB6AXuCRRmSpc7j10e-CZql4EVAQhyj2PMYO19SC2LLyRNKxt2MwDysZXZSEknZKiHymrOjzvzq5KOkISY7sijrLjgxxIb1xpGwyqHsIwCJhcXJT-1D-YXkFDhNGL719Wy_hEPKfgG78F6nfYo0K4VxxjD1Ybi2-UNi-if1M65Qe-zDf0NZ21ufhQ14pX42rYN8l3hIbADICqFlnETuQlHw-l-qTyHsxwgWCofTm4qUyUNqiboDSvB9gJUpYuTFW5eQFXDRQ9b4SHajdgRE",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBz9OX7J6E0XeGYYVgXmwJMp-UjvbTad7o6uDpo1sed7c5l310NziwPkf2kiZbCGpQAizFaPNgx0s97OHR04p8R8CGn6RkQlCByJ4B2fwOX05Hd-vz8fVcdSyDNfQyb6uKBPhXIuYVYSILJajnggPsSOiVOY6rs9Jo08Bt0I10mjPuab0TxY8Fu-U0UzgASoFB37JRtGDdwYvBPPTBGMsqjgitZv7cwkYnR3pG5QXKFX8COMbEZznUx4hDV1oqpx66MtVo72gTzwaM"
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBz9OX7J6E0XeGYYVgXmwJMp-UjvbTad7o6uDpo1sed7c5l310NziwPkf2kiZbCGpQAizFaPNgx0s97OHR04p8R8CGn6RkQlCByJ4B2fwOX05Hd-vz8fVcdSyDNfQyb6uKBPhXIuYVYSILJajnggPsSOiVOY6rs9Jo08Bt0I10mjPuab0TxY8Fu-U0UzgASoFB37JRtGDdwYvBPPTBGMsqjgitZv7cwkYnR3pG5QXKFX8COMbEZznUx4hDV1oqpx66MtVo72gTzwaM",
     ],
   },
   globalStandards: {
@@ -204,6 +237,9 @@ const DEFAULT_DATA = {
     countriesCount: "30+",
     tonsCount: "150k",
     mapImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuBjpagPfeLkqvx8ktixc_Hc9OnyoHHt9m0l3ceLZ1s7LBdbyQOmVir0TB4CI-dS0GdU2FtgyuNK-ACh7MD5_PaI28uggTHZ3s6VamFibmC5ZFV8IPfbfZ2XnNeSfk-cvCYsYQTUXCEckPmyGDQQRXh2C2u8WaHbDVddMEBt4-8qwms3JC1HiTWJ28PGrrVzRqjHa3lhGMGWCQg_zO19_qWmtq6WRpV22Gi_3Du-SdEHQStxGJfRY-KXEwOPp2APzSd5oU5wbWy3BnM",
+    locationName: "Liaqat Rice Mill, Rahim Yar Khan, Pakistan",
+    latitude: "28.4202",
+    longitude: "70.2989",
   },
   corePhilosophy: {
     sub: "Core Philosophy",
@@ -250,6 +286,7 @@ const DEFAULT_DATA = {
   },
   ceoSection: {
     quote: "Our legacy isn't measured in tonnes, but in the trust of the millions we feed every day.",
+    description: "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise. As we look to the next century, we are integrating smart milling technology and advanced optical sorting into our heritage practices to ensure sustainability for generations to come.",
     name: "Chaudhry Liaqat Ali",
     rank: "Chairman & Founder",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCzDwS2d2hqJJHqqpvhNB23e9R0d-lTiLqE9evVMbM4bNwG31hvZ8Bc2Ih2C_k8pzkfi-gXqy-KRdfMHr7k_lJpk-CiaVUnujn_pP7aB9FwTnDZIVmi350NfFRVcK20lmdcFleSlPiP9OZWO41p1-lLGQHz3IA3Ylft2KDuc6EzvyWSBSsAAQbBF2AEdgItd04eQnMW67vq2H2YvzJy7WZcIctQ63Nrg10NuUwQLByRdXzZxD6L82v8XPBwXYjFhmQD4gVux0PIXJ0",
@@ -260,6 +297,15 @@ const DEFAULT_DATA = {
     desc: "Discover our collection of world-class Basmati and non-Basmati varieties, processed with precision engineering and traditional heritage to meet global export standards.",
     bespokeTitle: "Bespoke Export Solutions for Global Partners",
     bespokeDesc: "We provide customized high-grade packaging, private labeling options, and flexible maritime logistics to ensure our premium rice reaches your warehouse in pristine, aromatic condition.",
+    downloadBrochureLabel: "Download Brochure",
+    talkToExpertLabel: "Talk to an Expert",
+    inquiryDashboardTitle: "Inquiry Dashboard",
+    monthlyCapacityLabel: "Monthly Capacity",
+    monthlyCapacityValue: "15,000 MT",
+    exportMarketsLabel: "Export Markets",
+    exportMarketsValue: "45+ Countries",
+    certificationsLabel: "Quality Certifications",
+    certifications: ["ISO 9001", "HACCP", "FDA APPROVED", "HALAL"],
   },
   exportPageContent: {
     sub: "Export Capabilities",
@@ -292,12 +338,25 @@ const DEFAULT_DATA = {
       { num: "01", title: "Quotation & Samples", desc: "Review our grades, request physical samples for laboratory analysis, and receive fixed-term volume pricing packages." },
       { num: "02", title: "Contractual Agreement", desc: "Letter of Credit (L/C) opening and formalization of shipping terms (Incoterms 2020) with our corporate legal and trade finance departments." },
       { num: "03", title: "Processing & Inspection", desc: "Custom milling, de-husking, polishing, and optical sortexing to your precise specifications, followed by SGS/BV third-party inspection certificates." },
-      { num: "04", title: "Dispatch & Documentation", desc: "Sturdy secure loading at Karachi Port or Port Qasim, followed by immediate digital and physical document set transmission (BL, COO, Phytosanitary)." }
-    ]
-  }
+      { num: "04", title: "Dispatch & Documentation", desc: "Sturdy secure loading at Karachi Port or Port Qasim, followed by immediate digital and physical document set transmission (BL, COO, Phytosanitary)." },
+    ],
+    certificationsSectionTitle: "Certified Quality for Global Markets",
+    certificationsSectionDesc: "We strictly maintain the highest international standards for food safety, operational management, and plant inspection.",
+    certificationBadges: [
+      { name: "ISO 9001:2015", subtitle: "Quality Systems" },
+      { name: "HACCP Certified", subtitle: "Food Safety" },
+      { name: "FDA Registered", subtitle: "US Compliance" },
+      { name: "HALAL Certified", subtitle: "Islamic Audit" },
+    ],
+  },
 };
 
 const AdminDataContext = createContext<AdminDataContextType | undefined>(undefined);
+
+function mapApiProducts(raw: Record<string, unknown>[]): Product[] {
+  if (!raw?.length) return DEFAULT_PRODUCTS;
+  return raw.map((p) => ({ ...p, id: String(p.id || p.slug) })) as Product[];
+}
 
 export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [banners, setBanners] = useState(DEFAULT_DATA.banners);
@@ -309,87 +368,94 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [ceoSection, setCeoSection] = useState(DEFAULT_DATA.ceoSection);
   const [productPageContent, setProductPageContent] = useState(DEFAULT_DATA.productPageContent);
   const [exportPageContent, setExportPageContent] = useState(DEFAULT_DATA.exportPageContent);
+  const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
+  const [loading, setLoading] = useState(true);
 
-  // Load from local storage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("elite_grain_admin_data");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.banners) setBanners(parsed.banners);
-        if (parsed.legacySection) setLegacySection(parsed.legacySection);
-        if (parsed.globalStandards) setGlobalStandards(parsed.globalStandards);
-        if (parsed.globalFootprint) setGlobalFootprint(parsed.globalFootprint);
-        if (parsed.corePhilosophy) setCorePhilosophy(parsed.corePhilosophy);
-        if (parsed.millProcess) setMillProcess(parsed.millProcess);
-        if (parsed.ceoSection) setCeoSection(parsed.ceoSection);
-        if (parsed.productPageContent) setProductPageContent(parsed.productPageContent);
-        if (parsed.exportPageContent) setExportPageContent(parsed.exportPageContent);
-      }
-    } catch (e) {
-      console.error("Failed to load admin data", e);
-    }
+  const applySections = useCallback((sections: Record<string, unknown>) => {
+    if (sections.banners) setBanners(sections.banners as typeof DEFAULT_DATA.banners);
+    if (sections.legacySection) setLegacySection(sections.legacySection as typeof DEFAULT_DATA.legacySection);
+    if (sections.globalStandards) setGlobalStandards(sections.globalStandards as typeof DEFAULT_DATA.globalStandards);
+    if (sections.globalFootprint) setGlobalFootprint(sections.globalFootprint as typeof DEFAULT_DATA.globalFootprint);
+    if (sections.corePhilosophy) setCorePhilosophy(sections.corePhilosophy as typeof DEFAULT_DATA.corePhilosophy);
+    if (sections.millProcess) setMillProcess(sections.millProcess as typeof DEFAULT_DATA.millProcess);
+    if (sections.ceoSection) setCeoSection(sections.ceoSection as typeof DEFAULT_DATA.ceoSection);
+    if (sections.productPageContent) setProductPageContent(sections.productPageContent as typeof DEFAULT_DATA.productPageContent);
+    if (sections.exportPageContent) setExportPageContent(sections.exportPageContent as typeof DEFAULT_DATA.exportPageContent);
   }, []);
 
-  const saveToLocalStorage = (newObj: any) => {
-    localStorage.setItem("elite_grain_admin_data", JSON.stringify(newObj));
+  const refreshFromBackend = useCallback(async () => {
+    try {
+      const [contentRes, productsRes] = await Promise.all([
+        fetchAllContent(),
+        fetchProducts(),
+      ]);
+      if (contentRes.sections && Object.keys(contentRes.sections).length > 0) {
+        applySections(contentRes.sections);
+      }
+      setProducts(mapApiProducts(productsRes));
+    } catch (e) {
+      console.warn("Backend unavailable, using default data", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [applySections]);
+
+  useEffect(() => {
+    refreshFromBackend();
+  }, [refreshFromBackend]);
+
+  const getSectionValue = (key: SectionKey): unknown => {
+    switch (key) {
+      case "banners": return banners;
+      case "legacySection": return legacySection;
+      case "globalStandards": return globalStandards;
+      case "globalFootprint": return globalFootprint;
+      case "corePhilosophy": return corePhilosophy;
+      case "millProcess": return millProcess;
+      case "ceoSection": return ceoSection;
+      case "productPageContent": return productPageContent;
+      case "exportPageContent": return exportPageContent;
+      default: return null;
+    }
   };
 
-  const updateData = (key: string, value: any) => {
-    let currentData = {
-      banners,
-      legacySection,
-      globalStandards,
-      globalFootprint,
-      corePhilosophy,
-      millProcess,
-      ceoSection,
-      productPageContent,
-      exportPageContent,
-    };
-
+  const updateData = (key: string, value: unknown) => {
     switch (key) {
       case "banners":
-        setBanners(value);
-        currentData.banners = value;
+        setBanners(value as typeof DEFAULT_DATA.banners);
         break;
       case "legacySection":
-        setLegacySection(value);
-        currentData.legacySection = value;
+        setLegacySection(value as typeof DEFAULT_DATA.legacySection);
         break;
       case "globalStandards":
-        setGlobalStandards(value);
-        currentData.globalStandards = value;
+        setGlobalStandards(value as typeof DEFAULT_DATA.globalStandards);
         break;
       case "globalFootprint":
-        setGlobalFootprint(value);
-        currentData.globalFootprint = value;
+        setGlobalFootprint(value as typeof DEFAULT_DATA.globalFootprint);
         break;
       case "corePhilosophy":
-        setCorePhilosophy(value);
-        currentData.corePhilosophy = value;
+        setCorePhilosophy(value as typeof DEFAULT_DATA.corePhilosophy);
         break;
       case "millProcess":
-        setMillProcess(value);
-        currentData.millProcess = value;
+        setMillProcess(value as typeof DEFAULT_DATA.millProcess);
         break;
       case "ceoSection":
-        setCeoSection(value);
-        currentData.ceoSection = value;
+        setCeoSection(value as typeof DEFAULT_DATA.ceoSection);
         break;
       case "productPageContent":
-        setProductPageContent(value);
-        currentData.productPageContent = value;
+        setProductPageContent(value as typeof DEFAULT_DATA.productPageContent);
         break;
       case "exportPageContent":
-        setExportPageContent(value);
-        currentData.exportPageContent = value;
+        setExportPageContent(value as typeof DEFAULT_DATA.exportPageContent);
         break;
       default:
         return;
     }
+  };
 
-    saveToLocalStorage(currentData);
+  const saveSection = async (key: SectionKey) => {
+    const value = getSectionValue(key);
+    await apiSaveSection(key, value);
   };
 
   const resetToDefault = () => {
@@ -402,8 +468,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCeoSection(DEFAULT_DATA.ceoSection);
     setProductPageContent(DEFAULT_DATA.productPageContent);
     setExportPageContent(DEFAULT_DATA.exportPageContent);
-
-    localStorage.removeItem("elite_grain_admin_data");
+    setProducts(DEFAULT_PRODUCTS);
   };
 
   return (
@@ -418,8 +483,12 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ceoSection,
         productPageContent,
         exportPageContent,
+        products,
+        loading,
         updateData,
+        saveSection,
         resetToDefault,
+        refreshFromBackend,
       }}
     >
       {children}

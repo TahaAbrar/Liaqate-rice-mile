@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { PRODUCTS, Product } from "../data";
 import { Send, CheckCircle2, Ruler, Calendar, ArrowRight, ShieldCheck, Mail } from "lucide-react";
+import { useAdminData } from "../context/AdminDataContext";
+import { fetchProductBySlug } from "../api";
+import { ROUTES, useParams, useRouter } from "../lib/router";
 
-interface ProductDetailViewProps {
-  productId: string;
-  onSelectProduct: (productId: string) => void;
-  onNavigate: (screen: "home" | "about" | "products" | "export") => void;
-}
-
-export default function ProductDetailView({ productId, onSelectProduct, onNavigate }: ProductDetailViewProps) {
+export default function ProductDetailView() {
+  const { slug } = useParams("/products/:slug");
+  const { navigate } = useRouter();
+  const { products } = useAdminData();
+  const [product, setProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
     companyName: "",
     country: "",
@@ -16,13 +17,30 @@ export default function ProductDetailView({ productId, onSelectProduct, onNaviga
   });
   const [submitted, setSubmitted] = useState(false);
 
-  // Retrieve selected product or fallback to super-basmati
-  const product: Product = PRODUCTS.find((p) => p.id === productId) || PRODUCTS[0];
-
-  // Scroll to top when product changes
   useEffect(() => {
+    const loadProduct = async () => {
+      const fallback =
+        products.find((p) => p.id === slug) ||
+        PRODUCTS.find((p) => p.id === slug) ||
+        products[0] ||
+        PRODUCTS[0];
+
+      if (!slug) {
+        setProduct(fallback);
+        return;
+      }
+
+      try {
+        const data = await fetchProductBySlug(slug);
+        setProduct({ ...data, id: String(data.id || data.slug) } as Product);
+      } catch {
+        setProduct(fallback);
+      }
+    };
+
+    loadProduct();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [productId]);
+  }, [slug, products]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +51,15 @@ export default function ProductDetailView({ productId, onSelectProduct, onNaviga
     }, 4000);
   };
 
-  // Find 3 other related products
-  const relatedProducts = PRODUCTS.filter((p) => p.id !== product.id).slice(0, 3);
+  if (!product) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center text-on-surface-variant">
+        Loading product...
+      </div>
+    );
+  }
+
+  const relatedProducts = products.filter((p) => p.id !== product.id).slice(0, 3);
 
   return (
     <div className="w-full">
@@ -322,7 +347,7 @@ export default function ProductDetailView({ productId, onSelectProduct, onNaviga
               <div className="h-1 w-20 bg-secondary mt-4 rounded-full"></div>
             </div>
             <button
-              onClick={() => onNavigate("products")}
+              onClick={() => navigate(ROUTES.products)}
               className="text-primary hover:text-secondary font-sans text-xs font-bold uppercase tracking-wider flex items-center gap-2 group transition-colors"
             >
               View Full Portfolio
@@ -351,7 +376,7 @@ export default function ProductDetailView({ productId, onSelectProduct, onNaviga
                     {p.description}
                   </p>
                   <button
-                    onClick={() => onSelectProduct(p.id)}
+                    onClick={() => navigate(ROUTES.productDetail(p.id))}
                     className="inline-block border border-secondary text-secondary hover:bg-secondary hover:text-white px-6 py-2 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300"
                   >
                     View Detail

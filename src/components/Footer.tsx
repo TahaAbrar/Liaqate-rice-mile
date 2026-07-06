@@ -1,18 +1,16 @@
 import { Wheat, Globe, Mail, Phone } from "lucide-react";
+import { ROUTES, useRouter } from "../lib/router";
 
-interface FooterProps {
-  onNavigate: (screen: any) => void;
-}
+export default function Footer() {
+  const { navigate } = useRouter();
 
-export default function Footer({ onNavigate }: FooterProps) {
   return (
     <footer className="bg-surface-container-highest w-full pt-16 pb-8 border-t border-outline-variant/30">
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
-        {/* Brand Column */}
         <div className="space-y-6">
-          <div 
+          <div
             className="flex items-center gap-3 cursor-pointer group"
-            onClick={() => onNavigate("home")}
+            onClick={() => navigate(ROUTES.home)}
           >
             <Wheat className="text-primary w-6 h-6 transition-transform duration-500 group-hover:rotate-12" />
             <span className="font-serif-title text-xl font-bold text-primary uppercase tracking-widest">
@@ -35,77 +33,62 @@ export default function Footer({ onNavigate }: FooterProps) {
           </div>
         </div>
 
-        {/* Navigation Column */}
         <div className="space-y-4">
           <h4 className="font-sans font-bold text-xs uppercase tracking-widest text-primary">
             Our Portfolio
           </h4>
           <ul className="space-y-3 font-sans text-sm text-on-surface-variant">
             <li>
-              <button 
-                onClick={() => onNavigate("products")} 
-                className="hover:text-primary transition-colors text-left"
-              >
+              <button onClick={() => navigate(ROUTES.products)} className="hover:text-primary transition-colors text-left">
                 Super Basmati
               </button>
             </li>
             <li>
-              <button 
-                onClick={() => onNavigate("products")} 
-                className="hover:text-primary transition-colors text-left"
-              >
+              <button onClick={() => navigate(ROUTES.products)} className="hover:text-primary transition-colors text-left">
                 1121 Kainat / Sella
               </button>
             </li>
             <li>
-              <button 
-                onClick={() => onNavigate("products")} 
-                className="hover:text-primary transition-colors text-left"
-              >
+              <button onClick={() => navigate(ROUTES.products)} className="hover:text-primary transition-colors text-left">
                 PK-386 Long Grain
               </button>
             </li>
             <li>
-              <button 
-                onClick={() => onNavigate("products")} 
-                className="hover:text-primary transition-colors text-left"
-              >
+              <button onClick={() => navigate(ROUTES.products)} className="hover:text-primary transition-colors text-left">
                 IRRI-6 / IRRI-9
               </button>
             </li>
           </ul>
         </div>
 
-        {/* Quick Links / Compliance */}
         <div className="space-y-4">
           <h4 className="font-sans font-bold text-xs uppercase tracking-widest text-primary">
             Quick Links
           </h4>
           <ul className="space-y-3 font-sans text-sm text-on-surface-variant">
             <li>
-              <button onClick={() => onNavigate("about")} className="hover:text-primary transition-colors text-left">
+              <button onClick={() => navigate(ROUTES.about)} className="hover:text-primary transition-colors text-left">
                 Quality Assurance
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate("export")} className="hover:text-primary transition-colors text-left">
+              <button onClick={() => navigate(ROUTES.export)} className="hover:text-primary transition-colors text-left">
                 Global Logistics
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate("about")} className="hover:text-primary transition-colors text-left">
+              <button onClick={() => navigate(ROUTES.about)} className="hover:text-primary transition-colors text-left">
                 Sustainability
               </button>
             </li>
             <li>
-              <button onClick={() => onNavigate("export")} className="hover:text-primary transition-colors text-left">
+              <button onClick={() => navigate(ROUTES.export)} className="hover:text-primary transition-colors text-left">
                 Request a Quote
               </button>
             </li>
           </ul>
         </div>
 
-        {/* Certifications Grid */}
         <div className="space-y-4">
           <h4 className="font-sans font-bold text-xs uppercase tracking-widest text-primary">
             Certifications
@@ -127,7 +110,6 @@ export default function Footer({ onNavigate }: FooterProps) {
         </div>
       </div>
 
-      {/* Copywrite Bar */}
       <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="font-sans text-sm text-on-surface-variant opacity-80">
           © 2026 Elite Grain International. All Rights Reserved. Est. 1978.
@@ -135,8 +117,8 @@ export default function Footer({ onNavigate }: FooterProps) {
         <div className="flex flex-wrap gap-8 font-sans text-sm text-on-surface-variant opacity-85">
           <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
           <a href="#" className="hover:text-primary transition-colors">Terms of Export</a>
-          <button 
-            onClick={() => onNavigate("admin-login")}
+          <button
+            onClick={() => navigate(ROUTES.adminLogin)}
             className="text-amber-600 hover:text-amber-500 hover:underline font-bold transition-all flex items-center gap-1 cursor-pointer"
           >
             🔐 Control Deck
