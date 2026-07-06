@@ -1,4 +1,5 @@
 import json
+import os
 import uuid
 from pathlib import Path
 from urllib.parse import urlencode
@@ -36,6 +37,24 @@ def _parse_json_body(request):
         return json.loads(request.body.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError):
         return None
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def admin_login(request):
+    body = _parse_json_body(request)
+    if body is None:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+    expected_user = os.getenv("ADMIN_USERNAME", "admin")
+    expected_pass = os.getenv("ADMIN_PASSWORD", "admin123")
+    username = str(body.get("username", "")).strip()
+    password = str(body.get("password", ""))
+
+    if username == expected_user and password == expected_pass:
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"error": "Invalid credentials"}, status=401)
 
 
 @require_http_methods(["GET"])

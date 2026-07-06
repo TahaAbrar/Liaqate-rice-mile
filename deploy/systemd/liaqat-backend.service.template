@@ -1,0 +1,21 @@
+[Unit]
+Description=Liaqat Rice Mills — Django API (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=__DEPLOY_USER__
+Group=__DEPLOY_USER__
+WorkingDirectory=__DEPLOY_ROOT__/backend
+EnvironmentFile=__DEPLOY_ROOT__/.env
+ExecStart=__DEPLOY_ROOT__/venv/bin/gunicorn backend.wsgi:application \
+    --bind 127.0.0.1:__BACKEND_PORT__ \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

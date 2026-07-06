@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import HomeView from "./components/HomeView";
@@ -12,16 +12,33 @@ import Dashboard from "./components/Admin/Dashboard";
 import Toaster from "./components/Admin/Toaster";
 import { AdminDataProvider } from "./context/AdminDataContext";
 import { Router, matchPath, ROUTES, useRouter } from "./lib/router";
+import {
+  isAdminAuthenticated,
+  setAdminAuthenticated,
+  clearAdminAuthenticated,
+} from "./lib/adminAuth";
 
 function AppContent() {
   const { path, navigate } = useRouter();
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [toaster, setToaster] = useState<{ message: string; subMessage?: string } | null>(null);
 
+  const isAdminLogin = path === ROUTES.adminLogin;
   const isAdminDashboard = path === ROUTES.adminDashboard;
-  const showNavAndFooter = !isAdminDashboard;
+  const isAdminRoute = isAdminLogin || isAdminDashboard;
+  const showNavAndFooter = !isAdminRoute;
+
+  useEffect(() => {
+    if (isAdminLogin && isAdminAuthenticated()) {
+      navigate(ROUTES.adminDashboard);
+    }
+    if (isAdminDashboard && !isAdminAuthenticated()) {
+      navigate(ROUTES.adminLogin);
+    }
+  }, [path, isAdminLogin, isAdminDashboard, navigate]);
 
   const handleLoginSuccess = () => {
+    setAdminAuthenticated();
     setToaster({
       message: "Admin Session Verified",
       subMessage: "Secure credentials accepted. Full content editing clearance granted.",
@@ -30,6 +47,7 @@ function AppContent() {
   };
 
   const handleLogout = () => {
+    clearAdminAuthenticated();
     navigate(ROUTES.home);
   };
 
@@ -53,7 +71,10 @@ function AppContent() {
     if (matchPath("/products/:slug", path)) {
       return <ProductDetailView />;
     }
-    if (path === ROUTES.adminLogin) {
+    if (isAdminLogin) {
+      if (isAdminAuthenticated()) {
+        return null;
+      }
       return (
         <LoginPage
           onLoginSuccess={handleLoginSuccess}
@@ -61,7 +82,10 @@ function AppContent() {
         />
       );
     }
-    if (path === ROUTES.adminDashboard) {
+    if (isAdminDashboard) {
+      if (!isAdminAuthenticated()) {
+        return null;
+      }
       return <Dashboard onLogout={handleLogout} />;
     }
     return <HomeView />;
@@ -75,7 +99,9 @@ function AppContent() {
         />
       )}
 
-      <main className={`flex-grow animate-fadeIn ${showNavAndFooter ? "pt-[72px]" : ""}`}>{renderPage()}</main>
+      <main className={`flex-grow animate-fadeIn ${showNavAndFooter ? "pt-[72px]" : ""}`}>
+        {renderPage()}
+      </main>
 
       {showNavAndFooter && <Footer />}
 

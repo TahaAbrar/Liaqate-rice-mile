@@ -8,8 +8,20 @@
     "dev:backend": "bash scripts/run-backend.sh",
     "build": "vite build",
     "preview": "vite preview",
+    "start:prod": "node scripts/production-server.mjs",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "deploy:env": "bash scripts/deploy-env-init.sh",
+    "deploy:build": "bash scripts/deploy-build.sh",
+    "deploy:install": "sudo bash scripts/deploy-install.sh",
+    "deploy:start": "bash scripts/deploy-start.sh",
+    "deploy:stop": "bash scripts/deploy-stop.sh",
+    "deploy:update": "bash scripts/deploy-update.sh",
+    "service:install": "bash scripts/install-user-service.sh",
+    "service:status": "systemctl --user status liaqat-rice",
+    "service:restart": "systemctl --user restart liaqat-rice",
+    "service:stop": "systemctl --user stop liaqat-rice",
+    "service:logs": "journalctl --user -u liaqat-rice -f"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

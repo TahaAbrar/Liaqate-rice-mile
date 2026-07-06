@@ -19,4 +19,5 @@ urlpatterns = [
     path("api/inquiries/", views.inquiry_list, name="inquiry_list"),
     path("api/inquiries/create/", views.inquiry_create, name="inquiry_create"),
     path("api/inquiries/<int:pk>/delete/", views.inquiry_delete, name="inquiry_delete"),
+    path("api/admin/login/", views.admin_login, name="admin_login"),
 ]

@@ -81,6 +81,13 @@ export async function submitInquiry(data: InquiryPayload) {
   });
 }
 
+export async function adminLogin(username: string, password: string) {
+  return request<{ success: boolean }>("/api/admin/login/", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+
 export async function deleteInquiry(id: number) {
   return request<{ success: boolean }>(`/api/inquiries/${id}/delete/`, {
     method: "DELETE",

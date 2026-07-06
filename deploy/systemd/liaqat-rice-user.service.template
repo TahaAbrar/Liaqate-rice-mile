@@ -1,0 +1,16 @@
+[Unit]
+Description=Liaqat Rice Mills — Website (port __PUBLIC_PORT__)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__DEPLOY_ROOT__
+EnvironmentFile=__DEPLOY_ROOT__/.env
+ExecStart=__DEPLOY_ROOT__/scripts/production-service.sh
+Restart=always
+RestartSec=5
+StandardOutput=append:__DEPLOY_ROOT__/.run/service.log
+StandardError=append:__DEPLOY_ROOT__/.run/service.log
+
+[Install]
+WantedBy=default.target
