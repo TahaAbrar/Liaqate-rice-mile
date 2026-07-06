@@ -1,40 +1,18 @@
-import React, { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2, FileText, Globe, ArrowRight, ShieldCheck } from "lucide-react";
+import React from "react";
+import { Mail, Phone, MapPin, FileText, Globe, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
+import { mailtoHref, telHref, whatsappHref } from "../lib/contactLinks";
+import WhatsAppIcon from "./icons/WhatsAppIcon";
+import BulkInquiryForm from "./BulkInquiryForm";
 
 interface ExportViewProps {
   onRequestQuote: () => void;
 }
 
-export default function ExportView({ onRequestQuote }: ExportViewProps) {
+export default function ExportView({ onRequestQuote: _onRequestQuote }: ExportViewProps) {
   const { navigate } = useRouter();
-  const { banners, exportPageContent } = useAdminData();
-  const [formData, setFormData] = useState({
-    name: "",
-    company: "",
-    email: "",
-    grade: "Extra Long Grain Basmati",
-    volume: "",
-    message: "",
-  });
-  const [submitted, setSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({
-        name: "",
-        company: "",
-        email: "",
-        grade: "Extra Long Grain Basmati",
-        volume: "",
-        message: "",
-      });
-    }, 4000);
-  };
+  const { banners, exportPageContent, footerContent } = useAdminData();
 
   return (
     <div className="w-full">
@@ -167,13 +145,6 @@ export default function ExportView({ onRequestQuote }: ExportViewProps) {
               <p className="text-on-surface-variant font-sans text-sm leading-relaxed">
                 {exportPageContent.cardLogisticsDesc}
               </p>
-              <button 
-                onClick={onRequestQuote}
-                className="flex items-center gap-2 text-primary hover:text-secondary font-sans font-bold uppercase tracking-wider text-xs transition-colors"
-              >
-                View Logistics Stack 
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
             </div>
             <div className="w-full sm:w-1/3 h-40 rounded-xl overflow-hidden shadow-md">
               <img 
@@ -341,144 +312,78 @@ export default function ExportView({ onRequestQuote }: ExportViewProps) {
           <div className="space-y-8">
             <div className="space-y-3">
               <h2 className="font-serif-title text-3xl sm:text-5xl text-primary font-medium">
-                Initiate Your Export Partnership
+                {footerContent.exportInquiryTitle}
               </h2>
               <p className="font-sans text-base text-on-surface-variant leading-relaxed">
-                Connect with our trade export desk for volume pricing inquiries, grade specifications, private label branding, and logistics planning. Our global sales team responds within 12 business hours.
+                {footerContent.exportInquiryDesc}
               </p>
             </div>
 
             <div className="space-y-6 pt-4">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div>
-                  <h5 className="font-sans font-bold text-base text-primary">Email Global Sales</h5>
-                  <p className="text-on-surface-variant font-sans text-sm mt-0.5">exports@elitegrain.com</p>
-                </div>
-              </div>
+              {footerContent.email && (
+                <a href={mailtoHref(footerContent.email)} className="flex items-start gap-4 group">
+                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-sans font-bold text-base text-primary">{footerContent.emailLabel}</h5>
+                    <p className="text-on-surface-variant font-sans text-sm mt-0.5 group-hover:text-primary transition-colors">
+                      {footerContent.email}
+                    </p>
+                  </div>
+                </a>
+              )}
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div>
-                  <h5 className="font-sans font-bold text-base text-primary">Direct Hotline</h5>
-                  <p className="text-on-surface-variant font-sans text-sm mt-0.5">+92 (0) 55 123 4567</p>
-                </div>
-              </div>
+              {footerContent.phone && (
+                <a href={telHref(footerContent.phone)} className="flex items-start gap-4 group">
+                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-sans font-bold text-base text-primary">{footerContent.phoneLabel}</h5>
+                    <p className="text-on-surface-variant font-sans text-sm mt-0.5 group-hover:text-primary transition-colors">
+                      {footerContent.phone}
+                    </p>
+                  </div>
+                </a>
+              )}
 
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0">
-                  <MapPin className="w-5 h-5" />
+              {footerContent.whatsapp && (
+                <a
+                  href={whatsappHref(footerContent.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-4 group"
+                >
+                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0 group-hover:bg-secondary/20 transition-colors">
+                    <WhatsAppIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-sans font-bold text-base text-primary">{footerContent.whatsappLabel}</h5>
+                    <p className="text-on-surface-variant font-sans text-sm mt-0.5 group-hover:text-primary transition-colors">
+                      {footerContent.whatsapp}
+                    </p>
+                  </div>
+                </a>
+              )}
+
+              {footerContent.address && (
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary flex-shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-sans font-bold text-base text-primary">{footerContent.addressLabel}</h5>
+                    <p className="text-on-surface-variant font-sans text-sm mt-0.5">{footerContent.address}</p>
+                  </div>
                 </div>
-                <div>
-                  <h5 className="font-sans font-bold text-base text-primary">Strategic HQ</h5>
-                  <p className="text-on-surface-variant font-sans text-sm mt-0.5">G.T Road, Gujranwala, Punjab, Pakistan</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Form */}
           <div className="bg-white p-8 sm:p-12 rounded-2xl border border-outline-variant/30 shadow-sm relative">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase">Contact Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="John Doe"
-                    className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase">Company Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="Global Trade Ltd"
-                    className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant uppercase">Corporate Email</label>
-                <input
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="john@company.com"
-                  className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase">Rice Grade</label>
-                  <select
-                    value={formData.grade}
-                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-                    className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm"
-                  >
-                    <option>Extra Long Grain Basmati</option>
-                    <option>Super Kernel Basmati</option>
-                    <option>IRRI-6 Long Grain</option>
-                    <option>1121 Sella Rice</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-on-surface-variant uppercase">Monthly Volume (Tons)</label>
-                  <input
-                    type="number"
-                    required
-                    value={formData.volume}
-                    onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
-                    placeholder="e.g. 500"
-                    className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-on-surface-variant uppercase">Message &amp; Port of Discharge</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Briefly describe your packaging requirements and destination port..."
-                  className="w-full border-0 border-b border-outline-variant bg-transparent py-3 focus:ring-0 focus:border-primary transition-colors font-sans text-sm resize-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary-container text-white py-4 rounded-full font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                Send Export Inquiry
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-
-            {/* Success message popup */}
-            {submitted && (
-              <div className="absolute inset-0 bg-white/95 rounded-2xl flex flex-col items-center justify-center text-center p-8 animate-fadeIn">
-                <CheckCircle2 className="w-16 h-16 text-secondary animate-bounce" />
-                <h4 className="font-serif-title text-2xl font-bold text-primary mt-4">Inquiry Received</h4>
-                <p className="text-on-surface-variant font-sans text-sm max-w-sm mt-2">
-                  Thank you! Our global export sales desk will analyze your request and send a customized trade quotation shortly.
-                </p>
-              </div>
-            )}
+            <BulkInquiryForm source="export_page" variant="inline" submitLabel="Send Export Inquiry" />
           </div>
         </div>
       </section>

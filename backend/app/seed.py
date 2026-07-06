@@ -1,6 +1,6 @@
 """Default CMS + product data — mirrors src/data.ts and AdminDataContext DEFAULT_DATA."""
 
-from .default_seed import SECTIONS, PRODUCT_SLUGS
+from .default_seed import SECTIONS, PRODUCT_SLUGS, CATALOG_DEFAULTS
 
 
 def load_seed_data():
@@ -52,15 +52,39 @@ def _load_products_from_ts():
         return []
 
 
+def ensure_footer_seeded():
+    from .models import SiteSection
+    from .default_seed import SECTIONS
+
+    if not SiteSection.objects.filter(key="footerContent").exists():
+        SiteSection.objects.create(key="footerContent", data=SECTIONS["footerContent"])
+
+
+def ensure_catalog_seeded():
+    """Seed product catalog metadata (collections, weights, bag types) if missing."""
+    from .models import SiteSection
+
+    for key, items in CATALOG_DEFAULTS.items():
+        if not SiteSection.objects.filter(key=key).exists():
+            SiteSection.objects.create(key=key, data=items)
+
+
 def ensure_seeded():
     from .models import Product, SiteSection
 
     if SiteSection.objects.exists() and Product.objects.exists():
+        ensure_catalog_seeded()
+        ensure_footer_seeded()
         return
 
     data = load_seed_data()
     for key, value in data.get("sections", {}).items():
         SiteSection.objects.update_or_create(key=key, defaults={"data": value})
+    for key, items in CATALOG_DEFAULTS.items():
+        SiteSection.objects.update_or_create(key=key, defaults={"data": items})
+    SiteSection.objects.update_or_create(
+        key="footerContent", defaults={"data": SECTIONS["footerContent"]}
+    )
     for product in data.get("products", []):
         slug = product.get("id") or product.get("slug")
         if slug:

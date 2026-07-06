@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Product } from "../data";
-import { Download, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
 
@@ -10,23 +9,17 @@ interface ProductsViewProps {
 
 export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
   const { navigate } = useRouter();
-  const { productPageContent, products } = useAdminData();
-  const [activeFilter, setActiveFilter] = useState<"All" | "Basmati" | "Non-Basmati" | "Premium Export" | "Sella">("All");
+  const { productPageContent, products, collections } = useAdminData();
+  const [activeFilter, setActiveFilter] = useState<string>("all");
 
   const filterItems = [
-    { id: "All", label: "All Varieties" },
-    { id: "Basmati", label: "Basmati" },
-    { id: "Non-Basmati", label: "Non-Basmati" },
-    { id: "Premium Export", label: "Premium Export" },
-    { id: "Sella", label: "Sella" },
-  ] as const;
+    { id: "all", label: "All Varieties" },
+    ...collections.map((c) => ({ id: c.id, label: c.name })),
+  ];
 
   const filteredProducts = products.filter((product) => {
-    if (activeFilter === "All") return true;
-    if (activeFilter === "Premium Export") {
-      return product.badges.includes("Premium Export") || product.grade === "PREMIUM";
-    }
-    return product.category === activeFilter;
+    if (activeFilter === "all") return true;
+    return product.collectionId === activeFilter;
   });
 
   return (
@@ -47,7 +40,7 @@ export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
         </div>
       </section>
 
-      {/* Sticky Filters bar */}
+      {/* Sticky Filters bar — collections from admin */}
       <section className="sticky top-[73px] z-40 bg-background/90 backdrop-blur-md border-b border-outline-variant/10 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-5 flex flex-wrap justify-center gap-3">
           {filterItems.map((item) => (
@@ -68,61 +61,59 @@ export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
 
       {/* Catalog Grid */}
       <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.id}
-              onClick={() => navigate(ROUTES.productDetail(product.id))}
-              className="group cursor-pointer flex flex-col bg-white border border-outline-variant/20 hover:border-primary/40 p-5 rounded-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
-            >
-              {/* Image container */}
-              <div className="aspect-[4/5] overflow-hidden relative rounded-lg bg-surface-container-low mb-6">
-                <img
-                  src={product.catalogImage}
-                  alt={product.name}
-                  className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-primary text-white px-3.5 py-1 font-sans text-[10px] font-bold tracking-widest rounded-full uppercase shadow-md">
-                    {product.grade}
-                  </span>
-                </div>
-              </div>
-
-              {/* Text content */}
-              <div className="space-y-3 flex-grow flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-serif-title text-2xl text-primary font-semibold group-hover:text-secondary transition-colors leading-tight">
-                      {product.name}
-                    </h3>
-                    <ArrowRight className="w-5 h-5 text-primary transform transition-transform group-hover:translate-x-1.5 flex-shrink-0 mt-1" />
-                  </div>
-                  
-                  <p className="font-sans text-xs font-bold text-secondary tracking-wide mt-1.5 uppercase">
-                    Age: {product.age} | Length: {product.length}
-                  </p>
-                  
-                  <p className="font-sans text-sm text-on-surface-variant/90 leading-relaxed mt-3 line-clamp-3">
-                    {product.description}
-                  </p>
-                </div>
-
-                {/* Badges footer */}
-                <div className="pt-5 border-t border-outline-variant/10 flex flex-wrap gap-2 mt-4">
-                  {product.badges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="font-sans text-[10px] font-bold text-secondary bg-secondary-container/15 px-2.5 py-1 rounded"
-                    >
-                      {badge}
+        {filteredProducts.length === 0 ? (
+          <p className="text-center text-on-surface-variant py-16">No products in this collection yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => navigate(ROUTES.productDetail(product.id))}
+                className="group cursor-pointer flex flex-col bg-white border border-outline-variant/20 hover:border-primary/40 p-5 rounded-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+              >
+                <div className="aspect-[4/5] overflow-hidden relative rounded-lg bg-surface-container-low mb-6">
+                  <img
+                    src={product.catalogImage || product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className="bg-primary text-white px-3.5 py-1 font-sans text-[10px] font-bold tracking-widest rounded-full uppercase shadow-md">
+                      {product.tagName}
                     </span>
-                  ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3 flex-grow flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start gap-2">
+                      <h3 className="font-serif-title text-2xl text-primary font-semibold group-hover:text-secondary transition-colors leading-tight">
+                        {product.name}
+                      </h3>
+                      <ArrowRight className="w-5 h-5 text-primary transform transition-transform group-hover:translate-x-1.5 flex-shrink-0 mt-1" />
+                    </div>
+
+                    <p className="font-sans text-xs font-bold text-secondary tracking-wide mt-1.5 uppercase">
+                      Age: {product.age} | Length: {product.length}
+                    </p>
+
+                    <p className="font-sans text-sm text-on-surface-variant/90 leading-relaxed mt-3 line-clamp-3">
+                      {product.description}
+                    </p>
+                  </div>
+
+                  {product.subtitle && (
+                    <div className="pt-5 border-t border-outline-variant/10 flex flex-wrap gap-2 mt-4">
+                      <span className="font-sans text-[10px] font-bold text-secondary bg-secondary-container/15 px-2.5 py-1 rounded">
+                        {product.subtitle}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}
@@ -136,23 +127,15 @@ export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
               {productPageContent.bespokeDesc}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <button 
-                onClick={() => alert("Elite Grain Brochure download started! Check your downloads.")}
-                className="bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90 px-8 py-3.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-105 transition-all duration-300"
-              >
-                {productPageContent.downloadBrochureLabel || "Download Brochure"}
-                <Download className="w-4 h-4" />
-              </button>
-              <button 
+              <button
                 onClick={onRequestQuote}
-                className="border border-white/40 text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300"
+                className="bg-secondary-container text-on-secondary-container hover:bg-secondary-container/90 px-8 py-3.5 rounded-full font-sans text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:scale-105 transition-all duration-300"
               >
                 {productPageContent.talkToExpertLabel || "Talk to an Expert"}
               </button>
             </div>
           </div>
 
-          {/* Stats Dashboard */}
           <div className="relative">
             <div className="absolute -inset-4 bg-secondary-fixed/5 blur-3xl rounded-full"></div>
             <div className="relative bg-primary-container p-8 rounded-2xl border border-outline/10 shadow-xl space-y-6">

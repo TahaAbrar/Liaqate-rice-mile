@@ -21,7 +21,7 @@ export default function Header({ onRequestQuote }: HeaderProps) {
     path === route || (route === ROUTES.products && matchPath("/products/:slug", path));
 
   return (
-    <header className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-outline-variant/10 shadow-sm transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-outline-variant/10 shadow-sm transition-all duration-300">
       <div className="flex justify-between items-center max-w-7xl mx-auto px-6 py-4">
         <div
           className="flex items-center gap-3 cursor-pointer select-none group"
@@ -29,8 +29,8 @@ export default function Header({ onRequestQuote }: HeaderProps) {
           id="brand-logo"
         >
           <Wheat className="text-primary w-8 h-8 transition-transform duration-500 group-hover:rotate-12" />
-          <span className="font-serif-title text-2xl font-semibold text-primary uppercase tracking-widest">
-            ELITE GRAIN
+          <span className="font-serif-title text-xl sm:text-2xl font-semibold text-primary tracking-wide">
+            Liaqat Rice Mills
           </span>
         </div>
 

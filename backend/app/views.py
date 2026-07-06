@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .models import Product, SiteSection
+from .models import Inquiry, Product, SiteSection
 from .seed import ensure_seeded, ensure_products_seeded
 
 SECTION_KEYS = [
@@ -22,7 +22,13 @@ SECTION_KEYS = [
     "ceoSection",
     "productPageContent",
     "exportPageContent",
+    "footerContent",
+    "productCollections",
+    "packageWeights",
+    "packagingBagTypes",
 ]
+
+CATALOG_SECTION_KEYS = ["productCollections", "packageWeights", "packagingBagTypes"]
 
 
 def _parse_json_body(request):
@@ -96,6 +102,126 @@ def product_save(request, slug):
         return JsonResponse({"error": "Invalid JSON body"}, status=400)
     product, _ = Product.objects.update_or_create(slug=slug, defaults={"data": body})
     return JsonResponse({"success": True, "slug": product.slug})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def product_create(request):
+    body = _parse_json_body(request)
+    if body is None:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    slug = (body.get("slug") or body.get("id") or "").strip()
+    if not slug:
+        return JsonResponse({"error": "Product slug is required"}, status=400)
+    if Product.objects.filter(slug=slug).exists():
+        return JsonResponse({"error": "Product with this slug already exists"}, status=409)
+    product = Product.objects.create(slug=slug, data=body)
+    return JsonResponse({"success": True, "slug": product.slug}, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def product_delete(request, slug):
+    try:
+        product = Product.objects.get(slug=slug)
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Product not found"}, status=404)
+    product.delete()
+    return JsonResponse({"success": True, "slug": slug})
+
+
+@require_http_methods(["GET"])
+def catalog_list(request, key):
+    if key not in CATALOG_SECTION_KEYS:
+        return JsonResponse({"error": "Unknown catalog key"}, status=404)
+    ensure_seeded()
+    try:
+        section = SiteSection.objects.get(key=key)
+        items = section.data if isinstance(section.data, list) else []
+    except SiteSection.DoesNotExist:
+        items = []
+    return JsonResponse({"items": items})
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def catalog_save(request, key):
+    if key not in CATALOG_SECTION_KEYS:
+        return JsonResponse({"error": "Unknown catalog key"}, status=404)
+    body = _parse_json_body(request)
+    if body is None:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    items = body.get("items")
+    if not isinstance(items, list):
+        return JsonResponse({"error": "Expected { items: [...] }"}, status=400)
+    section, _ = SiteSection.objects.update_or_create(key=key, defaults={"data": items})
+    return JsonResponse({"success": True, "key": section.key, "count": len(items)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def inquiry_create(request):
+    body = _parse_json_body(request)
+    if body is None:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+    required = ["source", "contactName", "companyName", "email", "country", "riceGrade", "quantity", "message"]
+    missing = [f for f in required if not str(body.get(f, "")).strip()]
+    if missing:
+        return JsonResponse({"error": f"Missing required fields: {', '.join(missing)}"}, status=400)
+
+    inquiry = Inquiry.objects.create(
+        source=str(body["source"]).strip(),
+        contact_name=str(body["contactName"]).strip(),
+        company_name=str(body["companyName"]).strip(),
+        email=str(body["email"]).strip(),
+        country=str(body["country"]).strip(),
+        rice_grade=str(body["riceGrade"]).strip(),
+        quantity=str(body["quantity"]).strip(),
+        message=str(body["message"]).strip(),
+        product_slug=str(body.get("productSlug", "") or "").strip(),
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "id": inquiry.id,
+            "created_at": inquiry.created_at.isoformat(),
+        },
+        status=201,
+    )
+
+
+def _inquiry_to_dict(inquiry: Inquiry) -> dict:
+    return {
+        "id": inquiry.id,
+        "source": inquiry.source,
+        "contactName": inquiry.contact_name,
+        "companyName": inquiry.company_name,
+        "email": inquiry.email,
+        "country": inquiry.country,
+        "riceGrade": inquiry.rice_grade,
+        "quantity": inquiry.quantity,
+        "message": inquiry.message,
+        "productSlug": inquiry.product_slug,
+        "createdAt": inquiry.created_at.isoformat(),
+    }
+
+
+@require_http_methods(["GET"])
+def inquiry_list(request):
+    items = [_inquiry_to_dict(i) for i in Inquiry.objects.order_by("-created_at")]
+    return JsonResponse(items, safe=False)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def inquiry_delete(request, pk):
+    try:
+        inquiry = Inquiry.objects.get(pk=pk)
+    except Inquiry.DoesNotExist:
+        return JsonResponse({"error": "Inquiry not found"}, status=404)
+    inquiry.delete()
+    return JsonResponse({"success": True, "id": pk})
 
 
 @csrf_exempt

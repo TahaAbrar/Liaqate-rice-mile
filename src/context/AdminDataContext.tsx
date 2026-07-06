@@ -1,12 +1,41 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import type { Product } from "../data";
 import { PRODUCTS as DEFAULT_PRODUCTS } from "../data";
 import {
   fetchAllContent,
   fetchProducts,
+  fetchCatalog,
+  fetchInquiries as apiFetchInquiries,
+  deleteInquiry as apiDeleteInquiry,
   saveSection as apiSaveSection,
+  saveCatalog as apiSaveCatalog,
+  createProduct as apiCreateProduct,
+  saveProduct as apiSaveProduct,
+  deleteProduct as apiDeleteProduct,
   type SectionKey,
+  type CatalogKey,
 } from "../api";
+import type { Inquiry } from "../types/inquiry";
+import type {
+  ProductCollection,
+  PackageWeight,
+  PackagingBagType,
+  CatalogProduct,
+} from "../types/catalog";
+import { normalizeProduct } from "../lib/productUtils";
+
+const CMS_SYNC_CHANNEL = "liaqat-cms-sync";
+
+function broadcastCmsUpdate() {
+  try {
+    new BroadcastChannel(CMS_SYNC_CHANNEL).postMessage({ type: "updated" });
+  } catch {
+    // BroadcastChannel unsupported — same-tab context still updates
+  }
+}
+
+// Re-export for convenience
+export type { CatalogProduct as Product } from "../types/catalog";
+export type { ProductCollection, PackageWeight, PackagingBagType };
 
 // Types for customizable items
 export interface Banner {
@@ -146,6 +175,22 @@ export interface ExportPageContent {
   certificationBadges: ExportCertificationBadge[];
 }
 
+export interface FooterContent {
+  description: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  address: string;
+  exportInquiryTitle: string;
+  exportInquiryDesc: string;
+  emailLabel: string;
+  phoneLabel: string;
+  whatsappLabel: string;
+  addressLabel: string;
+  certifications: string[];
+  copyright: string;
+}
+
 export interface AdminDataContextType {
   banners: {
     home: Banner;
@@ -160,12 +205,27 @@ export interface AdminDataContextType {
   ceoSection: CeoSection;
   productPageContent: ProductPageContent;
   exportPageContent: ExportPageContent;
-  products: Product[];
+  footerContent: FooterContent;
+  products: CatalogProduct[];
+  collections: ProductCollection[];
+  packageWeights: PackageWeight[];
+  packagingBagTypes: PackagingBagType[];
+  inquiries: Inquiry[];
   loading: boolean;
   updateData: (key: string, value: unknown) => void;
   saveSection: (key: SectionKey) => Promise<void>;
+  saveCatalogItems: (key: CatalogKey, items: unknown[]) => Promise<void>;
+  createProduct: (slug: string, data: CatalogProduct) => Promise<void>;
+  updateProduct: (slug: string, data: CatalogProduct) => Promise<void>;
+  removeProduct: (slug: string) => Promise<void>;
+  setProducts: React.Dispatch<React.SetStateAction<CatalogProduct[]>>;
+  setCollections: React.Dispatch<React.SetStateAction<ProductCollection[]>>;
+  setPackageWeights: React.Dispatch<React.SetStateAction<PackageWeight[]>>;
+  setPackagingBagTypes: React.Dispatch<React.SetStateAction<PackagingBagType[]>>;
   resetToDefault: () => void;
   refreshFromBackend: () => Promise<void>;
+  refreshInquiries: () => Promise<void>;
+  deleteInquiry: (id: number) => Promise<void>;
 }
 
 const DEFAULT_DATA = {
@@ -349,13 +409,51 @@ const DEFAULT_DATA = {
       { name: "HALAL Certified", subtitle: "Islamic Audit" },
     ],
   },
+  footerContent: {
+    description:
+      "Global purveyors of the finest Himalayan Basmati rice. Liaqat Rice Mill: Excellence in every grain since 1978. Excellence from field to fork.",
+    email: "exports@liaqatrice.com",
+    phone: "+92 (0) 55 123 4567",
+    whatsapp: "+92 300 1234567",
+    address: "G.T Road, Gujranwala, Punjab, Pakistan",
+    exportInquiryTitle: "Initiate Your Export Partnership",
+    exportInquiryDesc:
+      "Connect with our trade export desk for volume pricing inquiries, grade specifications, private label branding, and logistics planning. Our global sales team responds within 12 business hours.",
+    emailLabel: "Email Global Sales",
+    phoneLabel: "Direct Hotline",
+    whatsappLabel: "WhatsApp Trade Desk",
+    addressLabel: "Strategic HQ",
+    certifications: ["ISO 22000", "HACCP", "GMP", "FDA"],
+    copyright: "© 2026 Liaqat Rice Mills. All Rights Reserved. Est. 1978.",
+  },
 };
+
+const DEFAULT_COLLECTIONS: ProductCollection[] = [
+  { id: "basmati", name: "Basmati" },
+  { id: "non-basmati", name: "Non-Basmati" },
+  { id: "sella", name: "Sella" },
+  { id: "premium-export", name: "Premium Export" },
+];
+
+const DEFAULT_WEIGHTS: PackageWeight[] = [
+  { id: "w-5", value: 5 },
+  { id: "w-10", value: 10 },
+  { id: "w-20", value: 20 },
+  { id: "w-50", value: 50 },
+];
+
+const DEFAULT_BAG_TYPES: PackagingBagType[] = [
+  { id: "bag-bopp", name: "BOPP / Jute Retail Bag" },
+  { id: "bag-burlap", name: "Luxury Custom Burlap" },
+  { id: "bag-pp", name: "Woven PP Bulk Bag" },
+  { id: "bag-industrial", name: "Industrial Bulk Transport" },
+];
 
 const AdminDataContext = createContext<AdminDataContextType | undefined>(undefined);
 
-function mapApiProducts(raw: Record<string, unknown>[]): Product[] {
-  if (!raw?.length) return DEFAULT_PRODUCTS;
-  return raw.map((p) => ({ ...p, id: String(p.id || p.slug) })) as Product[];
+function mapApiProducts(raw: Record<string, unknown>[]): CatalogProduct[] {
+  if (!raw?.length) return DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>));
+  return raw.map((p) => normalizeProduct(p));
 }
 
 export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -368,8 +466,30 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [ceoSection, setCeoSection] = useState(DEFAULT_DATA.ceoSection);
   const [productPageContent, setProductPageContent] = useState(DEFAULT_DATA.productPageContent);
   const [exportPageContent, setExportPageContent] = useState(DEFAULT_DATA.exportPageContent);
-  const [products, setProducts] = useState<Product[]>(DEFAULT_PRODUCTS);
+  const [footerContent, setFooterContent] = useState(DEFAULT_DATA.footerContent);
+  const [products, setProducts] = useState<CatalogProduct[]>(
+    DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>))
+  );
+  const [collections, setCollections] = useState<ProductCollection[]>(DEFAULT_COLLECTIONS);
+  const [packageWeights, setPackageWeights] = useState<PackageWeight[]>(DEFAULT_WEIGHTS);
+  const [packagingBagTypes, setPackagingBagTypes] = useState<PackagingBagType[]>(DEFAULT_BAG_TYPES);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const refreshInquiries = useCallback(async () => {
+    try {
+      const items = await apiFetchInquiries();
+      setInquiries(items);
+    } catch (e) {
+      console.warn("Failed to load inquiries", e);
+    }
+  }, []);
+
+  const deleteInquiry = async (id: number) => {
+    await apiDeleteInquiry(id);
+    setInquiries((prev) => prev.filter((i) => i.id !== id));
+    broadcastCmsUpdate();
+  };
 
   const applySections = useCallback((sections: Record<string, unknown>) => {
     if (sections.banners) setBanners(sections.banners as typeof DEFAULT_DATA.banners);
@@ -381,18 +501,27 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (sections.ceoSection) setCeoSection(sections.ceoSection as typeof DEFAULT_DATA.ceoSection);
     if (sections.productPageContent) setProductPageContent(sections.productPageContent as typeof DEFAULT_DATA.productPageContent);
     if (sections.exportPageContent) setExportPageContent(sections.exportPageContent as typeof DEFAULT_DATA.exportPageContent);
+    if (sections.footerContent) setFooterContent(sections.footerContent as typeof DEFAULT_DATA.footerContent);
   }, []);
 
   const refreshFromBackend = useCallback(async () => {
     try {
-      const [contentRes, productsRes] = await Promise.all([
+      const [contentRes, productsRes, collectionsRes, weightsRes, bagsRes, inquiriesRes] = await Promise.all([
         fetchAllContent(),
         fetchProducts(),
+        fetchCatalog("productCollections").catch(() => ({ items: DEFAULT_COLLECTIONS })),
+        fetchCatalog("packageWeights").catch(() => ({ items: DEFAULT_WEIGHTS })),
+        fetchCatalog("packagingBagTypes").catch(() => ({ items: DEFAULT_BAG_TYPES })),
+        apiFetchInquiries().catch(() => [] as Inquiry[]),
       ]);
       if (contentRes.sections && Object.keys(contentRes.sections).length > 0) {
         applySections(contentRes.sections);
       }
       setProducts(mapApiProducts(productsRes));
+      if (collectionsRes.items?.length) setCollections(collectionsRes.items as ProductCollection[]);
+      if (weightsRes.items?.length) setPackageWeights(weightsRes.items as PackageWeight[]);
+      if (bagsRes.items?.length) setPackagingBagTypes(bagsRes.items as PackagingBagType[]);
+      setInquiries(inquiriesRes);
     } catch (e) {
       console.warn("Backend unavailable, using default data", e);
     } finally {
@@ -403,6 +532,23 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     refreshFromBackend();
   }, [refreshFromBackend]);
+
+  useEffect(() => {
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel(CMS_SYNC_CHANNEL);
+      channel.onmessage = (event) => {
+        if (event.data?.type === "inquiry") {
+          refreshInquiries();
+        } else {
+          refreshFromBackend();
+        }
+      };
+    } catch {
+      // ignore
+    }
+    return () => channel?.close();
+  }, [refreshFromBackend, refreshInquiries]);
 
   const getSectionValue = (key: SectionKey): unknown => {
     switch (key) {
@@ -415,6 +561,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       case "ceoSection": return ceoSection;
       case "productPageContent": return productPageContent;
       case "exportPageContent": return exportPageContent;
+      case "footerContent": return footerContent;
       default: return null;
     }
   };
@@ -448,6 +595,9 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       case "exportPageContent":
         setExportPageContent(value as typeof DEFAULT_DATA.exportPageContent);
         break;
+      case "footerContent":
+        setFooterContent(value as typeof DEFAULT_DATA.footerContent);
+        break;
       default:
         return;
     }
@@ -456,6 +606,30 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const saveSection = async (key: SectionKey) => {
     const value = getSectionValue(key);
     await apiSaveSection(key, value);
+    broadcastCmsUpdate();
+  };
+
+  const saveCatalogItems = async (key: CatalogKey, items: unknown[]) => {
+    await apiSaveCatalog(key, items);
+    broadcastCmsUpdate();
+  };
+
+  const createProduct = async (slug: string, data: CatalogProduct) => {
+    await apiCreateProduct(slug, data);
+    setProducts((prev) => [...prev, { ...data, id: slug, slug }]);
+    broadcastCmsUpdate();
+  };
+
+  const updateProduct = async (slug: string, data: CatalogProduct) => {
+    await apiSaveProduct(slug, data);
+    setProducts((prev) => prev.map((p) => (p.id === slug ? { ...data, id: slug, slug } : p)));
+    broadcastCmsUpdate();
+  };
+
+  const removeProduct = async (slug: string) => {
+    await apiDeleteProduct(slug);
+    setProducts((prev) => prev.filter((p) => p.id !== slug));
+    broadcastCmsUpdate();
   };
 
   const resetToDefault = () => {
@@ -468,7 +642,11 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setCeoSection(DEFAULT_DATA.ceoSection);
     setProductPageContent(DEFAULT_DATA.productPageContent);
     setExportPageContent(DEFAULT_DATA.exportPageContent);
-    setProducts(DEFAULT_PRODUCTS);
+    setFooterContent(DEFAULT_DATA.footerContent);
+    setProducts(DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>)));
+    setCollections(DEFAULT_COLLECTIONS);
+    setPackageWeights(DEFAULT_WEIGHTS);
+    setPackagingBagTypes(DEFAULT_BAG_TYPES);
   };
 
   return (
@@ -483,12 +661,27 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         ceoSection,
         productPageContent,
         exportPageContent,
+        footerContent,
         products,
+        collections,
+        packageWeights,
+        packagingBagTypes,
+        inquiries,
         loading,
         updateData,
         saveSection,
+        saveCatalogItems,
+        createProduct,
+        updateProduct,
+        removeProduct,
+        setProducts,
+        setCollections,
+        setPackageWeights,
+        setPackagingBagTypes,
         resetToDefault,
         refreshFromBackend,
+        refreshInquiries,
+        deleteInquiry,
       }}
     >
       {children}

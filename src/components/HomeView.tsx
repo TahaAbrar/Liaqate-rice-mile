@@ -1,5 +1,4 @@
 import { ArrowRight, Shield, Award, Globe, CheckCircle, Settings, Sprout, Truck, Search } from "lucide-react";
-import { Product } from "../data";
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
 import { LocationMapEmbed } from "./LocationMap";
@@ -8,7 +7,7 @@ export default function HomeView() {
   const { navigate } = useRouter();
   const { banners, legacySection, globalStandards, globalFootprint, products } = useAdminData();
   
-  const featuredProducts: Product[] = products.slice(0, 3);
+  const featuredProducts = products.slice(0, 3);
 
   // Icon maps for dynamic standards box render
   const icons = [Search, Award, Settings, Truck];
@@ -171,7 +170,7 @@ export default function HomeView() {
                   />
                   <div className="absolute top-4 left-4">
                     <span className="bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-sm">
-                      {product.id === "super-basmati" ? "Heritage Grade" : product.id === "pk-386" ? "Daily Premium" : "Chef's Choice"}
+                      {product.tagName}
                     </span>
                   </div>
                 </div>

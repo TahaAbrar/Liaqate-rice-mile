@@ -136,6 +136,48 @@ SECTIONS = {
             {"name": "HALAL Certified", "subtitle": "Islamic Audit"},
         ],
     },
+    "footerContent": {
+        "description": "Global purveyors of the finest Himalayan Basmati rice. Liaqat Rice Mill: Excellence in every grain since 1978. Excellence from field to fork.",
+        "email": "exports@liaqatrice.com",
+        "phone": "+92 (0) 55 123 4567",
+        "whatsapp": "+92 300 1234567",
+        "address": "G.T Road, Gujranwala, Punjab, Pakistan",
+        "exportInquiryTitle": "Initiate Your Export Partnership",
+        "exportInquiryDesc": "Connect with our trade export desk for volume pricing inquiries, grade specifications, private label branding, and logistics planning. Our global sales team responds within 12 business hours.",
+        "emailLabel": "Email Global Sales",
+        "phoneLabel": "Direct Hotline",
+        "whatsappLabel": "WhatsApp Trade Desk",
+        "addressLabel": "Strategic HQ",
+        "certifications": ["ISO 22000", "HACCP", "GMP", "FDA"],
+        "copyright": "© 2026 Liaqat Rice Mills. All Rights Reserved. Est. 1978.",
+    },
+}
+
+PRODUCT_COLLECTIONS = [
+    {"id": "basmati", "name": "Basmati"},
+    {"id": "non-basmati", "name": "Non-Basmati"},
+    {"id": "sella", "name": "Sella"},
+    {"id": "premium-export", "name": "Premium Export"},
+]
+
+PACKAGE_WEIGHTS = [
+    {"id": "w-5", "value": 5},
+    {"id": "w-10", "value": 10},
+    {"id": "w-20", "value": 20},
+    {"id": "w-50", "value": 50},
+]
+
+PACKAGING_BAG_TYPES = [
+    {"id": "bag-bopp", "name": "BOPP / Jute Retail Bag"},
+    {"id": "bag-burlap", "name": "Luxury Custom Burlap"},
+    {"id": "bag-pp", "name": "Woven PP Bulk Bag"},
+    {"id": "bag-industrial", "name": "Industrial Bulk Transport"},
+]
+
+CATALOG_DEFAULTS = {
+    "productCollections": PRODUCT_COLLECTIONS,
+    "packageWeights": PACKAGE_WEIGHTS,
+    "packagingBagTypes": PACKAGING_BAG_TYPES,
 }
 
 # Product slugs — full data loaded from frontend data.ts at seed time via management command

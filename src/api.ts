@@ -1,3 +1,5 @@
+import type { Inquiry, InquiryPayload } from "./types/inquiry";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export type SectionKey =
@@ -9,7 +11,8 @@ export type SectionKey =
   | "millProcess"
   | "ceoSection"
   | "productPageContent"
-  | "exportPageContent";
+  | "exportPageContent"
+  | "footerContent";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
@@ -31,6 +34,56 @@ export async function saveSection(key: SectionKey, data: unknown) {
   return request<{ success: boolean }>(`/api/content/${key}/save/`, {
     method: "PUT",
     body: JSON.stringify(data),
+  });
+}
+
+export type CatalogKey = "productCollections" | "packageWeights" | "packagingBagTypes";
+
+export async function fetchCatalog(key: CatalogKey) {
+  return request<{ items: Record<string, unknown>[] }>(`/api/catalog/${key}/`);
+}
+
+export async function saveCatalog(key: CatalogKey, items: unknown[]) {
+  return request<{ success: boolean }>(`/api/catalog/${key}/save/`, {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+}
+
+export async function createProduct(slug: string, data: unknown) {
+  return request<{ success: boolean; slug: string }>("/api/products/create/", {
+    method: "POST",
+    body: JSON.stringify({ ...((data as object) || {}), slug, id: slug }),
+  });
+}
+
+export async function saveProduct(slug: string, data: unknown) {
+  return request<{ success: boolean }>(`/api/products/${slug}/save/`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProduct(slug: string) {
+  return request<{ success: boolean }>(`/api/products/${slug}/delete/`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchInquiries() {
+  return request<Inquiry[]>("/api/inquiries/");
+}
+
+export async function submitInquiry(data: InquiryPayload) {
+  return request<{ success: boolean; id: number }>("/api/inquiries/create/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteInquiry(id: number) {
+  return request<{ success: boolean }>(`/api/inquiries/${id}/delete/`, {
+    method: "DELETE",
   });
 }
 

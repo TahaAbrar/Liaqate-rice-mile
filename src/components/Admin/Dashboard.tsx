@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useAdminData } from "../../context/AdminDataContext";
 import type { SectionKey } from "../../api";
 import ImagePicker from "./ImagePicker";
+import ProductCatalogAdmin from "./ProductCatalogAdmin";
+import InquiriesAdmin from "./InquiriesAdmin";
+import ConfirmModal from "./ConfirmModal";
 import LocationMapPicker from "./LocationMapPicker";
 import { 
   Layout, 
@@ -24,7 +27,10 @@ import {
   MapPin, 
   TrendingUp, 
   ShoppingBag, 
-  Anchor 
+  Anchor,
+  AlertCircle,
+  PanelBottom,
+  MessageSquare,
 } from "lucide-react";
 
 interface DashboardProps {
@@ -40,7 +46,10 @@ type ActiveTab =
   | "process" 
   | "ceo" 
   | "products" 
-  | "export_all";
+  | "product_catalog"
+  | "footer"
+  | "export_all"
+  | "inquiries";
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const {
@@ -53,16 +62,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     ceoSection,
     productPageContent,
     exportPageContent,
+    footerContent,
     updateData,
     saveSection,
     resetToDefault,
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("banners");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const TAB_SECTION_MAP: Record<ActiveTab, SectionKey> = {
+  const TAB_SECTION_MAP: Partial<Record<ActiveTab, SectionKey>> = {
     banners: "banners",
     heritage: "legacySection",
     standards: "globalStandards",
@@ -71,6 +82,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     process: "millProcess",
     ceo: "ceoSection",
     products: "productPageContent",
+    footer: "footerContent",
     export_all: "exportPageContent",
   };
 
@@ -83,22 +95,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     process: "The Mill Process",
     ceo: "CEO Profile",
     products: "Products Page",
+    product_catalog: "Product Catalog",
+    footer: "Footer Section",
     export_all: "Export Capabilities",
+    inquiries: "Inquiry Messages",
   };
 
-  const triggerSuccess = (msg: string) => {
-    setSuccessMsg(msg);
-    setTimeout(() => setSuccessMsg(""), 4000);
+  const showToast = (msg: string, type: "success" | "error" = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
   };
 
   const handleSaveCurrentSection = async () => {
+    if (activeTab === "product_catalog" || activeTab === "inquiries") return;
     const key = TAB_SECTION_MAP[activeTab];
+    if (!key) return;
     setSaving(true);
     try {
       await saveSection(key);
-      triggerSuccess(`${TAB_LABELS[activeTab]} saved to backend successfully!`);
+      showToast(`${TAB_LABELS[activeTab]} saved to backend successfully!`, "success");
     } catch {
-      triggerSuccess(`Failed to save ${TAB_LABELS[activeTab]}. Is the backend running?`);
+      showToast(`Failed to save ${TAB_LABELS[activeTab]}. Is the backend running?`, "error");
     } finally {
       setSaving(false);
     }
@@ -212,15 +229,46 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     handleExportPageChange("certificationBadges", badges);
   };
 
+  const handleFooterChange = (field: string, val: string | string[]) => {
+    const updated = { ...footerContent, [field]: val };
+    updateData("footerContent", updated);
+  };
+
+  const handleFooterCertChange = (idx: number, val: string) => {
+    const updated = [...footerContent.certifications];
+    updated[idx] = val;
+    handleFooterChange("certifications", updated);
+  };
+
+  const addFooterCert = () => {
+    handleFooterChange("certifications", [...footerContent.certifications, ""]);
+  };
+
+  const removeFooterCert = (idx: number) => {
+    if (footerContent.certifications.length <= 1) return;
+    handleFooterChange(
+      "certifications",
+      footerContent.certifications.filter((_, i) => i !== idx)
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 min-h-screen">
       {/* Toast Notification */}
-      {successMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-900 border border-emerald-400 text-emerald-300 px-6 py-4 rounded-xl shadow-xl shadow-emerald-950/20 animate-slideIn">
-          <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 animate-bounce" />
-          <div className="text-xs font-sans font-medium">
-            {successMsg}
-          </div>
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-xl animate-slideIn ${
+            toast.type === "error"
+              ? "bg-red-950 border border-red-500 text-red-200 shadow-red-950/30"
+              : "bg-slate-900 border border-emerald-400 text-emerald-300 shadow-emerald-950/20"
+          }`}
+        >
+          {toast.type === "error" ? (
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+          ) : (
+            <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 animate-bounce" />
+          )}
+          <div className="text-xs font-sans font-medium">{toast.msg}</div>
         </div>
       )}
 
@@ -245,12 +293,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => {
-              if (confirm("Are you sure you want to reset all content changes to system defaults?")) {
-                resetToDefault();
-                triggerSuccess("System database reset to initial values!");
-              }
-            }}
+            onClick={() => setShowResetConfirm(true)}
             className="px-4 py-2.5 border border-slate-800 hover:border-red-400 hover:text-red-400 rounded-lg text-xs font-sans font-bold uppercase tracking-wider transition-all flex items-center gap-2"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -282,7 +325,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             { id: "process", label: "The Mill Process", icon: Sliders },
             { id: "ceo", label: "CEO Profile Desk", icon: User },
             { id: "products", label: "Products Page Intro", icon: ShoppingBag },
+            { id: "product_catalog", label: "Product Catalog", icon: Layers },
+            { id: "footer", label: "Footer Section", icon: PanelBottom },
             { id: "export_all", label: "Export Capabilities", icon: Anchor },
+            { id: "inquiries", label: "Inquiry Messages", icon: MessageSquare },
           ].map((item) => {
             const IconComp = item.icon;
             const isSelected = activeTab === item.id;
@@ -1051,7 +1097,118 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </div>
             )}
 
+            {/* 8b. PRODUCT CATALOG */}
+            {activeTab === "product_catalog" && (
+              <ProductCatalogAdmin onNotify={showToast} />
+            )}
+
+            {/* FOOTER SECTION */}
+            {activeTab === "footer" && (
+              <div className="space-y-8">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">
+                    Description (below logo)
+                  </label>
+                  <textarea
+                    value={footerContent.description}
+                    rows={4}
+                    onChange={(e) => handleFooterChange("description", e.target.value)}
+                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
+                  />
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-xl border border-outline-variant/25 space-y-4">
+                  <h4 className="font-serif-title text-sm text-secondary font-bold">Contact Info</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Email</label>
+                      <input
+                        type="email"
+                        value={footerContent.email}
+                        onChange={(e) => handleFooterChange("email", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Phone Number</label>
+                      <input
+                        type="text"
+                        value={footerContent.phone}
+                        onChange={(e) => handleFooterChange("phone", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">WhatsApp Number</label>
+                      <input
+                        type="text"
+                        value={footerContent.whatsapp}
+                        onChange={(e) => handleFooterChange("whatsapp", e.target.value)}
+                        placeholder="+92 300 1234567"
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Address</label>
+                      <input
+                        type="text"
+                        value={footerContent.address}
+                        onChange={(e) => handleFooterChange("address", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase block">
+                    Footer Certifications
+                  </label>
+                  {footerContent.certifications.map((cert, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={cert}
+                        onChange={(e) => handleFooterCertChange(idx, e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-2.5 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
+                      />
+                      {footerContent.certifications.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeFooterCert(idx)}
+                          className="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg text-xs font-bold"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addFooterCert}
+                    className="text-xs font-bold text-primary uppercase hover:underline"
+                  >
+                    + Add Certification
+                  </button>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">Copyright Line</label>
+                  <input
+                    type="text"
+                    value={footerContent.copyright}
+                    onChange={(e) => handleFooterChange("copyright", e.target.value)}
+                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 9. EXPORT PAGE ALL SECTIONS */}
+            {activeTab === "inquiries" && (
+              <InquiriesAdmin />
+            )}
+
             {activeTab === "export_all" && (
               <div className="space-y-8">
                 {/* Header info */}
@@ -1377,6 +1534,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
 
           {/* Per-section Save button */}
+          {activeTab !== "product_catalog" && activeTab !== "inquiries" && (
           <div className="bg-slate-50 px-6 py-4 border-t border-outline-variant/30 flex justify-between items-center">
             <p className="text-[10px] font-sans text-slate-500">
               Changes preview live. Click Save to store <strong>{TAB_LABELS[activeTab]}</strong> in the database.
@@ -1395,8 +1553,22 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               Save {TAB_LABELS[activeTab]}
             </button>
           </div>
+          )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={showResetConfirm}
+        title="Reset All Defaults?"
+        message="Are you sure you want to reset all content changes to system defaults? This will restore the original demo data."
+        confirmLabel="Reset"
+        onConfirm={() => {
+          resetToDefault();
+          showToast("System database reset to initial values!", "success");
+          setShowResetConfirm(false);
+        }}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </div>
   );
 }

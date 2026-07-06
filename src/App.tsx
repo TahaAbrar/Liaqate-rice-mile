@@ -75,7 +75,7 @@ function AppContent() {
         />
       )}
 
-      <main className="flex-grow animate-fadeIn">{renderPage()}</main>
+      <main className={`flex-grow animate-fadeIn ${showNavAndFooter ? "pt-[72px]" : ""}`}>{renderPage()}</main>
 
       {showNavAndFooter && <Footer />}
 
