@@ -14,18 +14,16 @@ fi
 
 bash "$ROOT/scripts/deploy-build.sh"
 
-if systemctl is-active --quiet liaqat-backend 2>/dev/null; then
-  echo "==> Restarting backend (systemd)..."
-  sudo systemctl restart liaqat-backend
-elif [[ -f "$ROOT/.run/gunicorn.pid" ]]; then
-  echo "==> Restarting site (no-sudo mode)..."
+if systemctl --user is-active --quiet liaqat-rice 2>/dev/null; then
+  echo "==> Restarting systemd user service..."
+  systemctl --user restart liaqat-rice
+elif [[ -f "$ROOT/.run/gunicorn.pid" ]] || [[ -f "$ROOT/.run/frontend.pid" ]]; then
+  echo "==> Restarting site (manual mode)..."
   bash "$ROOT/scripts/deploy-stop.sh"
   bash "$ROOT/scripts/deploy-start.sh"
-fi
-
-if command -v nginx &>/dev/null && systemctl is-active --quiet nginx 2>/dev/null; then
-  echo "==> Reloading nginx..."
-  sudo nginx -t && sudo systemctl reload nginx
+else
+  echo "==> No running deployment detected."
+  echo "    Start with: npm run service:install  or  npm run deploy:start"
 fi
 
 echo "✓ Update complete."

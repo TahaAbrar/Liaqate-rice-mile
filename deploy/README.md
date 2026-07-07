@@ -1,103 +1,38 @@
 # Liaqat Rice Mills — Server Deployment
 
-Production stack options:
+Starts and stops the application on **port 8010**. SSL and reverse proxy are configured separately on your server.
 
-| Mode | Needs sudo? | Command |
-|------|-------------|---------|
-| **No-sudo (VPS user)** | No | `npm run deploy:start` |
-| **Systemd user service** | No | `npm run service:install` |
-| **Nginx + systemd** | Yes | `npm run deploy:install` |
-
-## Recommended — Auto-start service (port 8010)
-
-Runs on boot, restarts on crash, survives SSH logout:
-
-```bash
-npm run deploy:build      # first time only
-npm run service:install   # install + start systemd user service
-```
+## Commands
 
 | Command | Action |
 |---------|--------|
+| `npm run deploy:build` | Build for production (first time) |
+| `npm run deploy:start` | Start app on port 8010 |
+| `npm run deploy:stop` | Stop app |
+| `npm run service:install` | Install auto-start service (port 8010) |
 | `npm run service:status` | Check if running |
 | `npm run service:restart` | Restart |
-| `npm run service:stop` | Stop |
+| `npm run service:stop` | Stop service |
 | `npm run service:logs` | Live logs |
+| `npm run deploy:update` | Pull, rebuild, restart |
 
-## Quick start — NO sudo (your case)
-
-Build is already done. Just start:
-
-```bash
-cd Liaqate-rice-mile
-npm run deploy:start
-```
-
-Site: **http://194.163.154.222:8010** (from your `.env`)
-
-Stop: `npm run deploy:stop`
-
-**Important:** Open port **8010** in your VPS hosting panel (Contabo/firewall).
-
-**Full manual (PDF/Word):** `deploy/Liaqat-Rice-Mills-Deployment-Manual.html`
-
-## Full setup (no sudo)
+## First-time setup
 
 ```bash
-npm run deploy:env      # already done
-npm run deploy:build    # already done
-npm run deploy:start    # start site
-```
-
-## Quick start — WITH sudo (nginx)
-
-```bash
-npm run deploy:env
+npm run deploy:env      # optional — create .env
 npm run deploy:build
-npm run deploy:install
+npm run service:install # or: npm run deploy:start
 ```
 
-## Update after code changes
+## What runs
 
-```bash
-npm run deploy:update
-```
+- **Port 8010** — Node server (React app + `/api` proxy). This is the only public port.
+- **Port 8006** — Django/Gunicorn on `127.0.0.1` only (internal, not exposed).
 
-## Manual commands
+## `.env` (optional)
 
-| Task | Command |
-|------|---------|
-| Backend logs | `journalctl -u liaqat-backend -f` |
-| Restart API | `sudo systemctl restart liaqat-backend` |
-| Reload nginx | `sudo systemctl reload nginx` |
-| Run migrations | `cd backend && ../venv/bin/python manage.py migrate` |
+Default listen port is 8010. Override only if needed:
 
-## Files
-
-| File | Purpose |
-|------|---------|
-| `scripts/deploy-env-init.sh` | Generate production `.env` |
-| `scripts/deploy-build.sh` | venv, pip, migrate, `npm run build` |
-| `scripts/deploy-install.sh` | nginx + systemd install |
-| `scripts/deploy-update.sh` | git pull + rebuild + restart |
-| `deploy/nginx/liaqat-rice.conf.template` | Nginx site template |
-| `deploy/systemd/liaqat-backend.service.template` | Gunicorn service |
-
-## Custom port (e.g. 8080)
-
-In `.env`:
 ```env
-PUBLIC_PORT=8080
-APP_URL=http://YOUR_IP:8080
-CORS_ORIGINS=http://YOUR_IP:8080
-```
-
-Then re-run `npm run deploy:install`.
-
-## HTTPS (optional)
-
-After domain points to server:
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d yourdomain.com
+PUBLIC_PORT=8010
 ```

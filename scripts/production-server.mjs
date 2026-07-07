@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 dotenv.config({ path: path.join(ROOT, ".env") });
 
-const PUBLIC_PORT = Number(process.env.PUBLIC_PORT || process.env.VITE_PORT || 8000);
+const PUBLIC_PORT = Number(process.env.PUBLIC_PORT || 8010);
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1";
 const BACKEND_PORT = process.env.BACKEND_PORT || "8006";
 const BACKEND = `http://${BACKEND_HOST}:${BACKEND_PORT}`;

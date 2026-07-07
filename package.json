@@ -13,7 +13,6 @@
     "lint": "tsc --noEmit",
     "deploy:env": "bash scripts/deploy-env-init.sh",
     "deploy:build": "bash scripts/deploy-build.sh",
-    "deploy:install": "sudo bash scripts/deploy-install.sh",
     "deploy:start": "bash scripts/deploy-start.sh",
     "deploy:stop": "bash scripts/deploy-stop.sh",
     "deploy:update": "bash scripts/deploy-update.sh",

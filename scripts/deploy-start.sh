@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start production site WITHOUT sudo (no nginx/systemd).
+# Start production site manually (no systemd).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -9,7 +9,7 @@ RUN_DIR="$ROOT/.run"
 # shellcheck disable=SC1091
 source "$(dirname "$0")/lib/env.sh"
 
-PUBLIC_PORT="$(_env_get PUBLIC_PORT 8000 "$ENV_FILE")"
+PUBLIC_PORT="$(_env_get PUBLIC_PORT 8010 "$ENV_FILE")"
 BACKEND_PORT="$(_env_get BACKEND_PORT 8006 "$ENV_FILE")"
 APP_URL="$(_env_get APP_URL "http://127.0.0.1:${PUBLIC_PORT}" "$ENV_FILE")"
 

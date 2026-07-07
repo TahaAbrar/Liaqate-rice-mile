@@ -1,0 +1,19 @@
+npm run service:status   # check status
+npm run service:restart  # after code/config changes
+npm run service:logs     # view logs
+npm run deploy:update    # pull + rebuild + restart
+
+
+
+
+# 1. Stop the old deployment on 8010
+sudo fuser -k 8010/tcp
+sudo fuser -k 8006/tcp
+
+# 2. Prevent taha's service from auto-restarting (if it exists)
+sudo -u taha XDG_RUNTIME_DIR=/run/user/$(id -u taha) systemctl --user stop liaqat-rice 2>/dev/null
+sudo -u taha XDG_RUNTIME_DIR=/run/user/$(id -u taha) systemctl --user disable liaqat-rice 2>/dev/null
+
+# 3. Start YOUR deployment
+cd /home/usama/development/Liaqate-rice-mile
+npm run service:restart

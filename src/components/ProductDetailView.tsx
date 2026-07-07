@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { PRODUCTS } from "../data";
-import { Ruler, Calendar, ArrowRight, ShieldCheck, Mail, Sparkles } from "lucide-react";
+import { Ruler, Calendar, ArrowRight, ShieldCheck, Mail, Sparkles, CheckCircle2 } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
 import { fetchProductBySlug } from "../api";
 import { normalizeProduct } from "../lib/productUtils";
@@ -14,27 +14,37 @@ export default function ProductDetailView() {
   const { navigate } = useRouter();
   const { products, packageWeights, packagingBagTypes } = useAdminData();
   const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!slug) return;
 
+    setProduct(null);
+    setLoading(true);
+
     const fromContext = products.find((p) => p.id === slug);
     if (fromContext) {
       setProduct(fromContext);
+      setLoading(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     const loadProduct = async () => {
-      const fallbackRaw =
-        PRODUCTS.find((p) => p.id === slug) || products[0] || PRODUCTS[0];
-      const fallback = normalizeProduct(fallbackRaw as unknown as Record<string, unknown>);
-
       try {
         const data = await fetchProductBySlug(slug);
         setProduct(normalizeProduct(data));
       } catch {
-        setProduct(fallback);
+        const fallbackRaw =
+          products.find((p) => p.id === slug) ||
+          PRODUCTS.find((p) => p.id === slug);
+        if (fallbackRaw) {
+          setProduct(normalizeProduct(fallbackRaw as unknown as Record<string, unknown>));
+        } else {
+          setProduct(null);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -42,10 +52,24 @@ export default function ProductDetailView() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [slug, products, packageWeights, packagingBagTypes]);
 
-  if (!product) {
+  if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center text-on-surface-variant">
         Loading product...
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4 text-on-surface-variant">
+        <p>Product not found.</p>
+        <button
+          onClick={() => navigate(ROUTES.products)}
+          className="text-primary hover:text-secondary font-sans text-xs font-bold uppercase tracking-wider"
+        >
+          Back to Products
+        </button>
       </div>
     );
   }

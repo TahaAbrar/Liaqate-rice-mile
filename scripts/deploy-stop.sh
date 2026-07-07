@@ -8,7 +8,7 @@ RUN_DIR="$ROOT/.run"
 # shellcheck disable=SC1091
 source "$(dirname "$0")/lib/env.sh"
 
-PUBLIC_PORT="$(_env_get PUBLIC_PORT 8000 "$ROOT/.env")"
+PUBLIC_PORT="$(_env_get PUBLIC_PORT 8010 "$ROOT/.env")"
 BACKEND_PORT="$(_env_get BACKEND_PORT 8006 "$ROOT/.env")"
 
 stop_pid() {
@@ -35,7 +35,7 @@ stop_pid "backend" "$RUN_DIR/gunicorn.pid"
 
 if command -v fuser &>/dev/null; then
   fuser -k "${PUBLIC_PORT}/tcp" 2>/dev/null || true
-  fuser -k "127.0.0.1:${BACKEND_PORT}/tcp" 2>/dev/null || true
+  fuser -k "${BACKEND_PORT}/tcp" 2>/dev/null || true
 fi
 
 echo "✓ Stopped."

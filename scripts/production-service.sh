@@ -25,6 +25,37 @@ stop_all() {
   fi
 }
 
+port_in_use() {
+  local port="$1"
+  local host="${2:-0.0.0.0}"
+  if command -v ss &>/dev/null; then
+    if [[ "$host" == "127.0.0.1" ]]; then
+      ss -tln | grep -q "127.0.0.1:${port} "
+    else
+      ss -tln | grep -q ":${port} "
+    fi
+  else
+    return 1
+  fi
+}
+
+free_port() {
+  local port="$1"
+  local host="${2:-0.0.0.0}"
+  if ! port_in_use "$port" "$host"; then
+    return 0
+  fi
+  if command -v fuser &>/dev/null; then
+    fuser -k "${port}/tcp" 2>/dev/null || true
+    sleep 1
+  fi
+  if port_in_use "$port" "$host"; then
+    echo "Port ${port} is already in use by another process." >&2
+    echo "Check with: ss -tlnp | grep :${port}" >&2
+    exit 1
+  fi
+}
+
 cleanup() {
   stop_all
 }
@@ -41,6 +72,9 @@ if [[ ! -x "$ROOT/venv/bin/gunicorn" ]]; then
 fi
 
 stop_all
+
+free_port "$BACKEND_PORT" "127.0.0.1"
+free_port "$PUBLIC_PORT"
 
 echo "Starting gunicorn on 127.0.0.1:${BACKEND_PORT}..."
 cd "$ROOT/backend"
