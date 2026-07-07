@@ -82,10 +82,22 @@ SECTIONS = {
         ],
     },
     "ceoSection": {
-        "quote": "Our legacy isn't measured in tonnes, but in the trust of the millions we feed every day.",
-        "name": "Chaudhry Liaqat Ali",
-        "rank": "Chairman & Founder",
-        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzDwS2d2hqJJHqqpvhNB23e9R0d-lTiLqE9evVMbM4bNwG31hvZ8Bc2Ih2C_k8pzkfi-gXqy-KRdfMHr7k_lJpk-CiaVUnujn_pP7aB9FwTnDZIVmi350NfFRVcK20lmdcFleSlPiP9OZWO41p1-lLGQHz3IA3Ylft2KDuc6EzvyWSBSsAAQbBF2AEdgItd04eQnMW67vq2H2YvzJy7WZcIctQ63Nrg10NuUwQLByRdXzZxD6L82v8XPBwXYjFhmQD4gVux0PIXJ0",
+        "partners": [
+            {
+                "quote": "Our legacy isn't measured in tonnes, but in the trust of the millions we feed every day.",
+                "description": "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise.",
+                "name": "Chaudhry Liaqat Ali",
+                "rank": "Chairman & Founder",
+                "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzDwS2d2hqJJHqqpvhNB23e9R0d-lTiLqE9evVMbM4bNwG31hvZ8Bc2Ih2C_k8pzkfi-gXqy-KRdfMHr7k_lJpk-CiaVUnujn_pP7aB9FwTnDZIVmi350NfFRVcK20lmdcFleSlPiP9OZWO41p1-lLGQHz3IA3Ylft2KDuc6EzvyWSBSsAAQbBF2AEdgItd04eQnMW67vq2H2YvzJy7WZcIctQ63Nrg10NuUwQLByRdXzZxD6L82v8XPBwXYjFhmQD4gVux0PIXJ0",
+            },
+            {
+                "quote": "",
+                "description": "",
+                "name": "",
+                "rank": "",
+                "image": "",
+            },
+        ],
     },
     "productPageContent": {
         "badge": "Liaqat Rice Mill Portfolio",
@@ -150,6 +162,38 @@ SECTIONS = {
         "addressLabel": "Strategic HQ",
         "certifications": ["ISO 22000", "HACCP", "GMP", "FDA"],
         "copyright": "© 2026 Liaqat Rice Mills. All Rights Reserved. Est. 1978.",
+    },
+    "teamSection": {
+        "members": [
+            {
+                "id": "team-0",
+                "name": "Sarah Chen",
+                "rank": "Head of Global Export",
+                "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCQLpBlWBIMgDP6Fj80PRPBFmEM3roZFBEpU0aRRi4iCv9LTikAW0AteK9wLIqlTKkUXr95gyaFOHdQOF_0eXwrktT1qC6W7l_jTg7YgJND-GpIeZm14pVu76w41jE4vjxKhzIyqRyfSFYLDPsfv6N1AzQmNnM9Or5a_jzQl5S0YvEEMlkB7qZ6BFweHgvKB18T9x2WZSIRlgfGdFiG0-onWulIgEZ3J7oI2gKdBWbtG-hKISm-k0mSwNJKvBxRk3yhkeuzq3fKCxg",
+                "description": "Sarah manages Elite Grain's logistics channels, shipping networks, and compliance pathways to deliver premium products securely.",
+            },
+            {
+                "id": "team-1",
+                "name": "Arsalan Khan",
+                "rank": "Quality Assurance Lead",
+                "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCOq68qhOludEs0YGh4Zif4GYGyBPTjroFbKxwTLxrHcNk6srbjFHo0uvUDRwUCRPQ-2Yoo-tOQdbxa_Kc9vgWVkF2tI7hXsV4jHFCLKXGb2shCKYeeJxhE7SrI7x51Pu8G3VwmH9dTPZx2fTeX5vSC1A8DEpjfauswOyWys70pJksfkgzuHXYwTCMihoWPDhjBuMNGym0gmwDjeKgRFRiyPPuAOk-XZ3SWslWjlKUDBEp-qVP1Y8lgX2tJjsY75eb35LVfR673yyI",
+                "description": "With a background in agricultural biochemistry, Arsalan oversees physical and genetic testing protocols in our high-tech laboratories.",
+            },
+            {
+                "id": "team-2",
+                "name": "Michael Reeves",
+                "rank": "Master Miller",
+                "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuCRQi1ew1jR6sTMAOfZsFpjOebLxiiBo3YYQragnfnjSHpN1GkYpRasU_cXLkCdJUy4bhESh3ixptI2SGzJRThSW0cKErtm4jclnLKB1rVqlZn3xcjqzrCKbZCTmNphRidDEuBd1ikRj_3f5tlBQ99DlOYVWDQ5f1v60vJidE_7zKLM6vk4Qy6SQgJAUdf8o7nbKnMjPKS_dztag-ls6RdioLGKAXoj1oeThS3d4VRJ7CAMy5Lhave22EsQlEgC-AVfcl4KpG3iX50",
+                "description": "Michael leads our mechanical processing units, calibrating the dual-pass silk polishers and precision Sortex scanners.",
+            },
+            {
+                "id": "team-3",
+                "name": "Elena Rodriguez",
+                "rank": "Logistics Operations",
+                "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDfDS5jL1LJBYhjoXDvaGcQy8GYqP-ZyDvjfP4bMLHhU7LenWfMxFrk6aqkgkL469hxh9O8koU22C6zdsv4SPQ5AHEJQZ2N2YhziZpVt5D2C6CGgDg5RD-AhEWY1L6u0VEp3jxUCasfEP4l-aUcHf5vD0jxe-QEH_ud5R6Q-DMN-IntvtH4gp-RFiytppvv9OvHm0MmtTLlp8A08mGO4is-D6kgqzKUVs05wOtqjKw1Q1eBSPnUqZfLMzlb1HTgKtOoLfefxj--kvs",
+                "description": "Elena handles the documentation pipeline, coordinating customs clearance and phytosanitary licensing with global authorities.",
+            },
+        ],
     },
 }
 

@@ -4,6 +4,7 @@ import type { SectionKey } from "../../api";
 import ImagePicker from "./ImagePicker";
 import ProductCatalogAdmin from "./ProductCatalogAdmin";
 import InquiriesAdmin from "./InquiriesAdmin";
+import TeamAdmin from "./TeamAdmin";
 import ConfirmModal from "./ConfirmModal";
 import LocationMapPicker from "./LocationMapPicker";
 import { 
@@ -31,13 +32,14 @@ import {
   AlertCircle,
   PanelBottom,
   MessageSquare,
+  Users,
 } from "lucide-react";
 
 interface DashboardProps {
   onLogout: () => void;
 }
 
-type ActiveTab = 
+type ActiveTab =
   | "banners" 
   | "heritage" 
   | "standards" 
@@ -49,7 +51,8 @@ type ActiveTab =
   | "product_catalog"
   | "footer"
   | "export_all"
-  | "inquiries";
+  | "inquiries"
+  | "team";
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const {
@@ -84,6 +87,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     products: "productPageContent",
     footer: "footerContent",
     export_all: "exportPageContent",
+    team: "teamSection",
   };
 
   const TAB_LABELS: Record<ActiveTab, string> = {
@@ -93,12 +97,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     footprint: "Global Footprint",
     philosophy: "Philosophy & Mission",
     process: "The Mill Process",
-    ceo: "CEO Profile",
+    ceo: "Managing Partners",
     products: "Products Page",
     product_catalog: "Product Catalog",
     footer: "Footer Section",
     export_all: "Export Capabilities",
     inquiries: "Inquiry Messages",
+    team: "Team Employees",
   };
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
@@ -171,9 +176,26 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     handleMillProcessChange("steps", updatedSteps);
   };
 
-  const handleCeoChange = (field: string, val: string) => {
-    const updated = { ...ceoSection, [field]: val };
-    updateData("ceoSection", updated);
+  const addMillProcessStep = () => {
+    const nextNum = String(millProcess.steps.length + 1).padStart(2, "0");
+    handleMillProcessChange("steps", [
+      ...millProcess.steps,
+      { step: nextNum, title: "", description: "", image: "" },
+    ]);
+  };
+
+  const removeMillProcessStep = (idx: number) => {
+    if (millProcess.steps.length <= 1) return;
+    const updated = millProcess.steps
+      .filter((_, i) => i !== idx)
+      .map((s, i) => ({ ...s, step: String(i + 1).padStart(2, "0") }));
+    handleMillProcessChange("steps", updated);
+  };
+
+  const handlePartnerChange = (idx: number, field: "quote" | "description" | "name" | "rank" | "image", val: string) => {
+    const updatedPartners = [...ceoSection.partners];
+    updatedPartners[idx] = { ...updatedPartners[idx], [field]: val };
+    updateData("ceoSection", { partners: updatedPartners });
   };
 
   const handleProductsPageChange = (field: string, val: string | string[]) => {
@@ -323,12 +345,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             { id: "footprint", label: "Global Footprint", icon: Globe },
             { id: "philosophy", label: "Philosophy & Mission", icon: Compass },
             { id: "process", label: "The Mill Process", icon: Sliders },
-            { id: "ceo", label: "CEO Profile Desk", icon: User },
+            { id: "ceo", label: "Managing Partners", icon: User },
             { id: "products", label: "Products Page Intro", icon: ShoppingBag },
             { id: "product_catalog", label: "Product Catalog", icon: Layers },
             { id: "footer", label: "Footer Section", icon: PanelBottom },
             { id: "export_all", label: "Export Capabilities", icon: Anchor },
             { id: "inquiries", label: "Inquiry Messages", icon: MessageSquare },
+            { id: "team", label: "Team Employees", icon: Users },
           ].map((item) => {
             const IconComp = item.icon;
             const isSelected = activeTab === item.id;
@@ -356,7 +379,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-secondary"></span>
               <h2 className="font-serif-title text-xl text-primary font-medium capitalize">
-                {activeTab.replace("_", " ")} Settings
+                {activeTab === "ceo"
+                  ? "Managing Partners"
+                  : `${activeTab.replace("_", " ")} Settings`}
               </h2>
             </div>
             <span className="text-[10px] font-sans text-slate-400">
@@ -854,12 +879,34 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
                 {/* Steps update */}
                 <div className="space-y-6">
-                  <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">The 4 Journey Steps</h3>
+                  <div className="flex justify-between items-center border-b pb-2">
+                    <h3 className="font-serif-title text-base text-secondary font-semibold">
+                      Journey Steps ({millProcess.steps.length})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={addMillProcessStep}
+                      className="text-xs font-bold text-primary uppercase hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Journey Step
+                    </button>
+                  </div>
                   <div className="space-y-6">
                     {millProcess.steps.map((step, idx) => (
                       <div key={idx} className="p-4 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-4">
                         <div className="flex justify-between items-center bg-slate-200/50 p-2 rounded-lg">
                           <span className="text-xs font-sans font-bold text-primary">Step {step.step} configuration</span>
+                          {millProcess.steps.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeMillProcessStep(idx)}
+                              className="px-2 py-1 text-red-500 hover:bg-red-50 rounded text-xs font-bold flex items-center gap-1"
+                            >
+                              <Minus className="w-3 h-3" />
+                              Remove
+                            </button>
+                          )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-1">
@@ -893,55 +940,63 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </div>
             )}
 
-            {/* 7. CEO SECTION */}
+            {/* 7. MANAGING PARTNERS */}
             {activeTab === "ceo" && (
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">CEO Dynamic Quote</label>
-                  <textarea
-                    value={ceoSection.quote}
-                    rows={3}
-                    onChange={(e) => handleCeoChange("quote", e.target.value)}
-                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                  />
-                </div>
+              <div className="space-y-10">
+                {ceoSection.partners.map((partner, idx) => (
+                  <div key={idx} className="p-5 bg-slate-50 border border-outline-variant/30 rounded-xl space-y-5">
+                    <h3 className="font-serif-title text-base text-secondary font-semibold border-b pb-2">
+                      Managing Partner {idx + 1}
+                    </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">CEO Name</label>
-                    <input
-                      type="text"
-                      value={ceoSection.name}
-                      onChange={(e) => handleCeoChange("name", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Dynamic Quote</label>
+                      <textarea
+                        value={partner.quote}
+                        rows={3}
+                        onChange={(e) => handlePartnerChange(idx, "quote", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-on-surface-variant uppercase">Partner Name</label>
+                        <input
+                          type="text"
+                          value={partner.name}
+                          onChange={(e) => handlePartnerChange(idx, "name", e.target.value)}
+                          className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-on-surface-variant uppercase">Designation / Rank</label>
+                        <input
+                          type="text"
+                          value={partner.rank}
+                          onChange={(e) => handlePartnerChange(idx, "rank", e.target.value)}
+                          className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase">Description / Bio</label>
+                      <textarea
+                        value={partner.description || ""}
+                        rows={5}
+                        onChange={(e) => handlePartnerChange(idx, "description", e.target.value)}
+                        className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-white focus:outline-none focus:border-primary resize-none"
+                      />
+                    </div>
+
+                    <ImagePicker
+                      label="Portrait Image"
+                      value={partner.image}
+                      onChange={(url) => handlePartnerChange(idx, "image", url)}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase">CEO Designation / Rank</label>
-                    <input
-                      type="text"
-                      value={ceoSection.rank}
-                      onChange={(e) => handleCeoChange("rank", e.target.value)}
-                      className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase">CEO Description / Bio</label>
-                  <textarea
-                    value={ceoSection.description || ""}
-                    rows={5}
-                    onChange={(e) => handleCeoChange("description", e.target.value)}
-                    className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
-                  />
-                </div>
-
-                <ImagePicker
-                  label="CEO Portrait Image"
-                  value={ceoSection.image}
-                  onChange={(url) => handleCeoChange("image", url)}
-                />
+                ))}
               </div>
             )}
 
@@ -1207,6 +1262,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             {/* 9. EXPORT PAGE ALL SECTIONS */}
             {activeTab === "inquiries" && (
               <InquiriesAdmin />
+            )}
+
+            {activeTab === "team" && (
+              <TeamAdmin />
             )}
 
             {activeTab === "export_all" && (

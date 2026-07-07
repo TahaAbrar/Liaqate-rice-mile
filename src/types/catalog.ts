@@ -42,9 +42,8 @@ export interface CatalogProduct {
   qualityPromises: string[];
   technicalSpecs: TechnicalSpec[];
   packagingOptions: PackagingOption[];
+  showOnHome?: boolean;
 }
-
-export type CatalogKey = "productCollections" | "packageWeights" | "packagingBagTypes";
 
 export function slugify(text: string): string {
   return text

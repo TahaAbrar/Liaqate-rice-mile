@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Image as ImageIcon, Upload } from "lucide-react";
 import { uploadImage } from "../../api";
+import { resolveMediaUrl } from "../../lib/mediaUrl";
 
 interface ImagePickerProps {
   label?: string;
@@ -29,12 +30,9 @@ export default function ImagePicker({ label = "Image", value, onChange, classNam
     try {
       const url = await uploadImage(file);
       onChange(url);
-    } catch {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === "string") onChange(reader.result);
-      };
-      reader.readAsDataURL(file);
+    } catch (err) {
+      setError("Upload failed — is the backend running? Try again or use a smaller image.");
+      console.error("Image upload failed:", err);
     } finally {
       setUploading(false);
     }
@@ -52,7 +50,7 @@ export default function ImagePicker({ label = "Image", value, onChange, classNam
       <div className="flex flex-col sm:flex-row gap-4 items-start">
         <div className="w-full sm:w-40 h-32 rounded-lg border border-outline-variant/40 bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
           {value ? (
-            <img src={value} alt="Preview" className="w-full h-full object-cover" />
+            <img src={resolveMediaUrl(value)} alt="Preview" className="w-full h-full object-cover" />
           ) : (
             <div className="text-center p-3 text-slate-400">
               <ImageIcon className="w-8 h-8 mx-auto mb-1 opacity-50" />

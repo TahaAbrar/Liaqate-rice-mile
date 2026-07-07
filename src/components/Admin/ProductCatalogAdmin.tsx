@@ -44,6 +44,7 @@ const EMPTY_PRODUCT = (): CatalogProduct => ({
   qualityPromises: [""],
   technicalSpecs: [{ parameter: "", standardRequirement: "", testingMethod: "" }],
   packagingOptions: [],
+  showOnHome: false,
 });
 
 interface ProductCatalogAdminProps {
@@ -304,6 +305,18 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
     }
   };
 
+  const handleToggleHome = async (product: CatalogProduct) => {
+    try {
+      await updateProduct(product.id, { ...product, showOnHome: !product.showOnHome });
+      onNotify(
+        product.showOnHome ? `"${product.name}" removed from home page` : `"${product.name}" added to home page`,
+        "success"
+      );
+    } catch {
+      onNotify("Failed to update home page visibility", "error");
+    }
+  };
+
   const handleDeleteProduct = async (slug: string, name: string) => {
     askConfirm(
       "Delete Product?",
@@ -527,6 +540,18 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
                     <p className="text-sm font-semibold text-primary truncate">{p.name}</p>
                     <p className="text-[10px] text-slate-400 uppercase">{p.tagName}</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleHome(p)}
+                    title={p.showOnHome ? "Shown on home page" : "Show on home page"}
+                    className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider border transition-all shrink-0 ${
+                      p.showOnHome
+                        ? "bg-secondary text-white border-secondary"
+                        : "bg-white text-slate-400 border-outline-variant/40 hover:border-secondary"
+                    }`}
+                  >
+                    Home
+                  </button>
                   <button type="button" onClick={() => startEditProduct(p)} className="p-2 hover:bg-slate-100 rounded-lg">
                     <Edit className="w-4 h-4 text-primary" />
                   </button>
@@ -545,9 +570,29 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
           {/* Product form */}
           {(isFormOpen || editingSlug !== null) && (
             <div ref={productFormRef} className="border-t border-outline-variant/20 pt-8 space-y-8 scroll-mt-24">
-              <h3 className="font-serif-title text-lg text-secondary font-semibold">
-                {editingSlug ? `Edit: ${productForm.name}` : "New Product"}
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h3 className="font-serif-title text-lg text-secondary font-semibold">
+                  {editingSlug ? `Edit: ${productForm.name}` : "New Product"}
+                </h3>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <span className="text-[10px] font-bold uppercase text-on-surface-variant">Show on Home Page</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={productForm.showOnHome}
+                    onClick={() => updateForm({ showOnHome: !productForm.showOnHome })}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${
+                      productForm.showOnHome ? "bg-secondary" : "bg-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        productForm.showOnHome ? "translate-x-5" : ""
+                      }`}
+                    />
+                  </button>
+                </label>
+              </div>
 
               {/* Section 1 - Hero (required) */}
               <div className="p-5 bg-slate-50 rounded-xl border border-outline-variant/25 space-y-4">

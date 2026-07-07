@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { PRODUCTS as DEFAULT_PRODUCTS } from "../data";
+import { PRODUCTS as DEFAULT_PRODUCTS, TEAM_MEMBERS } from "../data";
 import {
   fetchAllContent,
   fetchProducts,
@@ -106,12 +106,78 @@ export interface MillProcess {
   steps: JourneyStepCustom[];
 }
 
-export interface CeoSection {
+export interface TeamMember {
+  id: string;
+  name: string;
+  rank: string;
+  image: string;
+  description: string;
+}
+
+export interface TeamSection {
+  members: TeamMember[];
+}
+
+function normalizeTeamSection(data: unknown): TeamSection {
+  const d = data as { members?: unknown[] };
+  if (!Array.isArray(d.members)) return DEFAULT_TEAM_SECTION;
+  return {
+    members: d.members.map((m, i) => {
+      const item = m as Record<string, unknown>;
+      return {
+        id: String(item.id || `team-${i}`),
+        name: String(item.name || ""),
+        rank: String(item.rank || item.role || ""),
+        image: String(item.image || ""),
+        description: String(item.description || item.bio || ""),
+      };
+    }),
+  };
+}
+
+const DEFAULT_TEAM_SECTION: TeamSection = {
+  members: TEAM_MEMBERS.map((m, i) => ({
+    id: `team-${i}`,
+    name: m.name,
+    rank: m.role,
+    image: m.image,
+    description: m.bio || "",
+  })),
+};
+
+export interface ManagingPartner {
   quote: string;
   description: string;
   name: string;
   rank: string;
   image: string;
+}
+
+export interface CeoSection {
+  partners: ManagingPartner[];
+}
+
+function normalizeCeoSection(data: unknown): CeoSection {
+  const d = data as Record<string, unknown>;
+  if (Array.isArray(d.partners)) {
+    const partners = (d.partners as ManagingPartner[]).slice(0, 2);
+    while (partners.length < 2) {
+      partners.push({ quote: "", description: "", name: "", rank: "", image: "" });
+    }
+    return { partners };
+  }
+  return {
+    partners: [
+      {
+        quote: String(d.quote ?? ""),
+        description: String(d.description ?? ""),
+        name: String(d.name ?? ""),
+        rank: String(d.rank ?? ""),
+        image: String(d.image ?? ""),
+      },
+      { quote: "", description: "", name: "", rank: "", image: "" },
+    ],
+  };
 }
 
 export interface ProductPageContent {
@@ -206,6 +272,7 @@ export interface AdminDataContextType {
   productPageContent: ProductPageContent;
   exportPageContent: ExportPageContent;
   footerContent: FooterContent;
+  teamSection: TeamSection;
   products: CatalogProduct[];
   collections: ProductCollection[];
   packageWeights: PackageWeight[];
@@ -345,11 +412,22 @@ const DEFAULT_DATA = {
     ],
   },
   ceoSection: {
-    quote: "Our legacy isn't measured in tonnes, but in the trust of the millions we feed every day.",
-    description: "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise. As we look to the next century, we are integrating smart milling technology and advanced optical sorting into our heritage practices to ensure sustainability for generations to come.",
-    name: "Chaudhry Liaqat Ali",
-    rank: "Chairman & Founder",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCzDwS2d2hqJJHqqpvhNB23e9R0d-lTiLqE9evVMbM4bNwG31hvZ8Bc2Ih2C_k8pzkfi-gXqy-KRdfMHr7k_lJpk-CiaVUnujn_pP7aB9FwTnDZIVmi350NfFRVcK20lmdcFleSlPiP9OZWO41p1-lLGQHz3IA3Ylft2KDuc6EzvyWSBSsAAQbBF2AEdgItd04eQnMW67vq2H2YvzJy7WZcIctQ63Nrg10NuUwQLByRdXzZxD6L82v8XPBwXYjFhmQD4gVux0PIXJ0",
+    partners: [
+      {
+        quote: "Our legacy isn't measured in tonnes, but in the trust of the millions we feed every day.",
+        description: "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise. As we look to the next century, we are integrating smart milling technology and advanced optical sorting into our heritage practices to ensure sustainability for generations to come.",
+        name: "Chaudhry Liaqat Ali",
+        rank: "Chairman & Founder",
+        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCzDwS2d2hqJJHqqpvhNB23e9R0d-lTiLqE9evVMbM4bNwG31hvZ8Bc2Ih2C_k8pzkfi-gXqy-KRdfMHr7k_lJpk-CiaVUnujn_pP7aB9FwTnDZIVmi350NfFRVcK20lmdcFleSlPiP9OZWO41p1-lLGQHz3IA3Ylft2KDuc6EzvyWSBSsAAQbBF2AEdgItd04eQnMW67vq2H2YvzJy7WZcIctQ63Nrg10NuUwQLByRdXzZxD6L82v8XPBwXYjFhmQD4gVux0PIXJ0",
+      },
+      {
+        quote: "",
+        description: "",
+        name: "",
+        rank: "",
+        image: "",
+      },
+    ],
   },
   productPageContent: {
     badge: "Liaqat Rice Mill Portfolio",
@@ -467,6 +545,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [productPageContent, setProductPageContent] = useState(DEFAULT_DATA.productPageContent);
   const [exportPageContent, setExportPageContent] = useState(DEFAULT_DATA.exportPageContent);
   const [footerContent, setFooterContent] = useState(DEFAULT_DATA.footerContent);
+  const [teamSection, setTeamSection] = useState(DEFAULT_TEAM_SECTION);
   const [products, setProducts] = useState<CatalogProduct[]>(
     DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>))
   );
@@ -498,10 +577,11 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (sections.globalFootprint) setGlobalFootprint(sections.globalFootprint as typeof DEFAULT_DATA.globalFootprint);
     if (sections.corePhilosophy) setCorePhilosophy(sections.corePhilosophy as typeof DEFAULT_DATA.corePhilosophy);
     if (sections.millProcess) setMillProcess(sections.millProcess as typeof DEFAULT_DATA.millProcess);
-    if (sections.ceoSection) setCeoSection(sections.ceoSection as typeof DEFAULT_DATA.ceoSection);
+    if (sections.ceoSection) setCeoSection(normalizeCeoSection(sections.ceoSection));
     if (sections.productPageContent) setProductPageContent(sections.productPageContent as typeof DEFAULT_DATA.productPageContent);
     if (sections.exportPageContent) setExportPageContent(sections.exportPageContent as typeof DEFAULT_DATA.exportPageContent);
     if (sections.footerContent) setFooterContent(sections.footerContent as typeof DEFAULT_DATA.footerContent);
+    if (sections.teamSection) setTeamSection(normalizeTeamSection(sections.teamSection));
   }, []);
 
   const refreshFromBackend = useCallback(async () => {
@@ -562,6 +642,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       case "productPageContent": return productPageContent;
       case "exportPageContent": return exportPageContent;
       case "footerContent": return footerContent;
+      case "teamSection": return teamSection;
       default: return null;
     }
   };
@@ -587,7 +668,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setMillProcess(value as typeof DEFAULT_DATA.millProcess);
         break;
       case "ceoSection":
-        setCeoSection(value as typeof DEFAULT_DATA.ceoSection);
+        setCeoSection(normalizeCeoSection(value));
         break;
       case "productPageContent":
         setProductPageContent(value as typeof DEFAULT_DATA.productPageContent);
@@ -597,6 +678,9 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         break;
       case "footerContent":
         setFooterContent(value as typeof DEFAULT_DATA.footerContent);
+        break;
+      case "teamSection":
+        setTeamSection(normalizeTeamSection(value));
         break;
       default:
         return;
@@ -643,6 +727,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setProductPageContent(DEFAULT_DATA.productPageContent);
     setExportPageContent(DEFAULT_DATA.exportPageContent);
     setFooterContent(DEFAULT_DATA.footerContent);
+    setTeamSection(DEFAULT_TEAM_SECTION);
     setProducts(DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>)));
     setCollections(DEFAULT_COLLECTIONS);
     setPackageWeights(DEFAULT_WEIGHTS);
@@ -662,6 +747,7 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         productPageContent,
         exportPageContent,
         footerContent,
+        teamSection,
         products,
         collections,
         packageWeights,

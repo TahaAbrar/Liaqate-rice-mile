@@ -24,6 +24,7 @@ SECTION_KEYS = [
     "productPageContent",
     "exportPageContent",
     "footerContent",
+    "teamSection",
     "productCollections",
     "packageWeights",
     "packagingBagTypes",

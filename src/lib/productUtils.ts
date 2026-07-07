@@ -36,6 +36,7 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
       packagingOptions: Array.isArray(raw.packagingOptions)
         ? (raw.packagingOptions as PackagingOption[])
         : [],
+      showOnHome: Boolean(raw.showOnHome),
     };
   }
 
@@ -97,5 +98,6 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
         ],
     technicalSpecs: specs,
     packagingOptions: [],
+    showOnHome: Boolean(raw.showOnHome),
   };
 }

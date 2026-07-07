@@ -12,7 +12,8 @@ export type SectionKey =
   | "ceoSection"
   | "productPageContent"
   | "exportPageContent"
-  | "footerContent";
+  | "footerContent"
+  | "teamSection";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {

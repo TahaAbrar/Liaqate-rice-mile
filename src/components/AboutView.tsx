@@ -1,21 +1,20 @@
-import { Sprout, Filter, Layers, Globe, Mail, Linkedin } from "lucide-react";
-import { TEAM_MEMBERS } from "../data";
+import { Sprout, Filter, Layers, Globe } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
 
 export default function AboutView() {
   const { navigate } = useRouter();
-  const { banners, corePhilosophy, millProcess, ceoSection } = useAdminData();
+  const { banners, corePhilosophy, millProcess, ceoSection, teamSection } = useAdminData();
 
-  // Dynamic icons map for process step icons
+  const stepIcons = [Sprout, Filter, Layers, Globe];
   const getStepIcon = (idx: number) => {
-    switch (idx) {
-      case 0: return <Sprout className="w-4 h-4" />;
-      case 1: return <Filter className="w-4 h-4" />;
-      case 2: return <Layers className="w-4 h-4" />;
-      default: return <Globe className="w-4 h-4" />;
-    }
+    const Icon = stepIcons[idx % stepIcons.length];
+    return <Icon className="w-4 h-4" />;
   };
+
+  const visiblePartners = ceoSection.partners.filter(
+    (p) => p.name || p.image || p.quote || p.description
+  );
 
   return (
     <div className="w-full">
@@ -143,19 +142,16 @@ export default function AboutView() {
         </div>
 
         <div className="max-w-5xl mx-auto px-6 relative">
-          {/* Vertical Center line */}
           <div className="absolute left-1/2 -translate-x-1/2 top-4 bottom-4 w-0.5 bg-gradient-to-b from-transparent via-secondary to-transparent hidden lg:block" />
 
-          {/* Timeline steps */}
           <div className="space-y-20 relative">
             {millProcess.steps.map((step, idx) => {
               const isEven = idx % 2 === 0;
               return (
                 <div 
-                  key={step.step}
+                  key={idx}
                   className="flex flex-col lg:flex-row items-center gap-10 lg:gap-0 relative z-10"
                 >
-                  {/* Left block */}
                   <div className={`w-full lg:w-1/2 ${isEven ? "lg:pr-16 lg:text-right order-2 lg:order-1" : "order-3"}`}>
                     {isEven ? (
                       <div className="space-y-3">
@@ -169,14 +165,12 @@ export default function AboutView() {
                     )}
                   </div>
 
-                  {/* Circle number */}
                   <div className="relative z-10 flex items-center justify-center order-1 lg:order-2">
                     <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-bold font-sans shadow-md border-4 border-white">
                       {getStepIcon(idx)}
                     </div>
                   </div>
 
-                  {/* Right block */}
                   <div className={`w-full lg:w-1/2 ${isEven ? "order-3 lg:pl-16" : "lg:pl-16 order-2"}`}>
                     {isEven ? (
                       <div className="w-full h-52 overflow-hidden rounded-xl border border-outline-variant/20 shadow-md">
@@ -196,35 +190,56 @@ export default function AboutView() {
         </div>
       </section>
 
-      {/* Leadership section (Founder) */}
-      <section className="py-24 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="relative max-w-md mx-auto lg:mx-0">
-            <div className="absolute -top-10 -left-10 w-32 h-32 border-t-2 border-l-2 border-secondary/30 pointer-events-none" />
-            <div className="h-[520px] w-full rounded-xl overflow-hidden shadow-2xl relative z-10">
-              <img 
-                src={ceoSection.image}
-                alt="Chaudhry Liaqat Ali portrait"
-                className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-700"
-              />
-            </div>
-          </div>
+      {/* Managing Partners */}
+      {visiblePartners.map((partner, idx) => {
+        const reversed = idx % 2 === 1;
+        return (
+          <section key={idx} className={`py-24 overflow-hidden ${idx % 2 === 0 ? "bg-white" : "bg-surface-container-low"}`}>
+            <div className={`max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center ${reversed ? "lg:[direction:rtl]" : ""}`}>
+              <div className={`relative max-w-md mx-auto lg:mx-0 ${reversed ? "lg:[direction:ltr]" : ""}`}>
+                {partner.image && (
+                  <>
+                    <div className="absolute -top-10 -left-10 w-32 h-32 border-t-2 border-l-2 border-secondary/30 pointer-events-none" />
+                    <div className="h-[520px] w-full rounded-xl overflow-hidden shadow-2xl relative z-10">
+                      <img
+                        src={partner.image}
+                        alt={partner.name || `Managing Partner ${idx + 1}`}
+                        className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-700"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
 
-          <div className="space-y-8">
-            <span className="text-secondary text-5xl font-serif-title select-none opacity-40 block">“</span>
-            <h2 className="font-serif-title text-3xl sm:text-4xl text-primary font-medium leading-snug italic">
-              "{ceoSection.quote}"
-            </h2>
-            <p className="font-sans text-base text-on-surface-variant leading-relaxed">
-              {ceoSection.description || "At Liaqat Rice Mill, we believe that agriculture is the most noble of human pursuits. Since our founding, we have operated on a simple principle: Purity without compromise."}
-            </p>
-            <div>
-              <p className="font-serif-title text-2xl text-primary font-semibold">{ceoSection.name}</p>
-              <p className="font-sans text-xs text-secondary font-bold uppercase tracking-widest mt-1">{ceoSection.rank}</p>
+              <div className={`space-y-8 ${reversed ? "lg:[direction:ltr]" : ""}`}>
+                {partner.quote && (
+                  <>
+                    <span className="text-secondary text-5xl font-serif-title select-none opacity-40 block">&ldquo;</span>
+                    <h2 className="font-serif-title text-3xl sm:text-4xl text-primary font-medium leading-snug italic">
+                      &ldquo;{partner.quote}&rdquo;
+                    </h2>
+                  </>
+                )}
+                {partner.description && (
+                  <p className="font-sans text-base text-on-surface-variant leading-relaxed">
+                    {partner.description}
+                  </p>
+                )}
+                {(partner.name || partner.rank) && (
+                  <div>
+                    {partner.name && (
+                      <p className="font-serif-title text-2xl text-primary font-semibold">{partner.name}</p>
+                    )}
+                    {partner.rank && (
+                      <p className="font-sans text-xs text-secondary font-bold uppercase tracking-widest mt-1">{partner.rank}</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
+      })}
 
       {/* Team Section */}
       <section className="py-24 bg-surface-container-low border-t border-outline-variant/10">
@@ -234,25 +249,22 @@ export default function AboutView() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {TEAM_MEMBERS.map((member) => (
-            <div key={member.name} className="group flex flex-col h-full bg-white rounded-xl p-5 border border-outline-variant/25 hover:shadow-lg transition-all duration-300">
-              <div className="h-72 w-full overflow-hidden rounded-lg mb-6 relative">
-                <img 
-                  src={member.image} 
-                  alt={member.name} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <a href="#" className="bg-white text-primary p-2.5 rounded-full hover:scale-110 transition-transform">
-                    <Linkedin className="w-4 h-4" />
-                  </a>
-                </div>
+          {teamSection.members.map((member) => (
+            <div key={member.id} className="group flex flex-col h-full bg-white rounded-xl p-5 border border-outline-variant/25 hover:shadow-lg transition-all duration-300">
+              <div className="h-72 w-full overflow-hidden rounded-lg mb-6">
+                {member.image && (
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
               </div>
               <h3 className="font-serif-title text-xl font-bold text-primary">{member.name}</h3>
-              <p className="font-sans text-xs text-secondary font-bold uppercase tracking-widest mt-1">{member.role}</p>
-              {member.bio && (
+              <p className="font-sans text-xs text-secondary font-bold uppercase tracking-widest mt-1">{member.rank}</p>
+              {member.description && (
                 <p className="font-sans text-xs text-on-surface-variant/80 mt-3 leading-relaxed">
-                  {member.bio}
+                  {member.description}
                 </p>
               )}
             </div>

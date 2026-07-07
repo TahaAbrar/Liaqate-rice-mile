@@ -167,12 +167,6 @@ export default function Footer() {
           <a href="#" className="hover:text-primary transition-colors">
             Terms of Export
           </a>
-          <button
-            onClick={() => navigate(ROUTES.adminLogin)}
-            className="text-amber-600 hover:text-amber-500 hover:underline font-bold transition-all flex items-center gap-1 cursor-pointer"
-          >
-            🔐 Control Deck
-          </button>
         </div>
       </div>
     </footer>

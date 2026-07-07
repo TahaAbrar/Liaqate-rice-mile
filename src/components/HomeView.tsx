@@ -2,12 +2,13 @@ import { ArrowRight, Shield, Award, Globe, CheckCircle, Settings, Sprout, Truck,
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
 import { LocationMapEmbed } from "./LocationMap";
+import FeaturedProductsCarousel from "./FeaturedProductsCarousel";
 
 export default function HomeView() {
   const { navigate } = useRouter();
   const { banners, legacySection, globalStandards, globalFootprint, products } = useAdminData();
   
-  const featuredProducts = products.slice(0, 3);
+  const homeProducts = products.filter((p) => p.showOnHome);
 
   // Icon maps for dynamic standards box render
   const icons = [Search, Award, Settings, Truck];
@@ -143,58 +144,7 @@ export default function HomeView() {
         </div>
       </section>
 
-      {/* Featured Products Section */}
-      <section className="py-24 bg-surface-container-low">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-3 mb-16">
-            <h2 className="font-serif-title text-3xl sm:text-5xl text-primary font-medium">
-              Our Finest Selections
-            </h2>
-            <p className="font-sans text-base text-on-surface-variant max-w-xl mx-auto">
-              Discover the aromatic essence and superior grain length of our signature exports.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <div 
-                key={product.id}
-                className="bg-white rounded-xl overflow-hidden border border-outline-variant/30 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 flex flex-col h-full"
-              >
-                {/* Image */}
-                <div className="h-64 w-full overflow-hidden relative">
-                  <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-full text-[10px] font-sans font-bold uppercase tracking-widest shadow-sm">
-                      {product.tagName}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-8 flex flex-col flex-grow text-center">
-                  <h3 className="font-serif-title text-2xl text-primary font-medium mb-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-on-surface-variant font-sans text-sm mb-6 leading-relaxed flex-grow">
-                    {product.description}
-                  </p>
-                  <button 
-                    onClick={() => navigate(ROUTES.productDetail(product.id))}
-                    className="w-full py-3 rounded-lg border border-primary text-primary hover:bg-primary hover:text-white font-sans text-xs font-bold uppercase tracking-wider transition-all duration-300"
-                  >
-                    Specifications
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FeaturedProductsCarousel products={homeProducts} />
 
       {/* Why Choose Us: Global Standards */}
       <section className="py-24 bg-white">
