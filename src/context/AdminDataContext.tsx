@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { PRODUCTS as DEFAULT_PRODUCTS, TEAM_MEMBERS } from "../data";
 import {
   fetchAllContent,
@@ -24,6 +24,22 @@ import type {
 import { normalizeProduct } from "../lib/productUtils";
 
 const CMS_SYNC_CHANNEL = "liaqat-cms-sync";
+const CMS_SECTION_KEYS: SectionKey[] = [
+  "banners",
+  "legacySection",
+  "globalStandards",
+  "globalFootprint",
+  "corePhilosophy",
+  "millProcess",
+  "ceoSection",
+  "productPageContent",
+  "exportPageContent",
+  "footerContent",
+  "teamSection",
+  "brandsPage",
+  "recipesPage",
+];
+const AUTO_SAVE_MS = 700;
 
 function broadcastCmsUpdate() {
   try {
@@ -43,6 +59,8 @@ export interface Banner {
   subtitle: string;
   desc: string;
   image: string;
+  /** Home banner background video (autoplay muted on frontend). */
+  video?: string;
 }
 
 export interface LegacySection {
@@ -117,6 +135,118 @@ export interface TeamMember {
 export interface TeamSection {
   members: TeamMember[];
 }
+
+export interface BrandItem {
+  id: string;
+  name: string;
+  image: string;
+  description: string;
+}
+
+export interface BrandsPageContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  bannerImage: string;
+  storyHeading: string;
+  storyImage: string;
+  storyDescription: string;
+  brands: BrandItem[];
+}
+
+export interface RecipeItem {
+  id: string;
+  name: string;
+  image: string;
+  /** Short text shown on recipe cards. */
+  description: string;
+  /** Full recipe — shown on detail page only. */
+  fullRecipe: string;
+}
+
+export interface RecipesPageContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  bannerImage: string;
+  recipes: RecipeItem[];
+}
+
+function normalizeBrandItem(item: Record<string, unknown>, index: number): BrandItem {
+  return {
+    id: String(item.id || `brand-${index}`),
+    name: String(item.name || ""),
+    image: String(item.image || ""),
+    description: String(item.description || ""),
+  };
+}
+
+function normalizeRecipeItem(item: Record<string, unknown>, index: number): RecipeItem {
+  const description = String(item.description || "");
+  return {
+    id: String(item.id || `recipe-${index}`),
+    name: String(item.name || ""),
+    image: String(item.image || ""),
+    description,
+    fullRecipe: String(item.fullRecipe || item.recipe || description),
+  };
+}
+
+function normalizeBrandsPage(data: unknown): BrandsPageContent {
+  const d = data as Record<string, unknown>;
+  const brands = Array.isArray(d.brands)
+    ? (d.brands as Record<string, unknown>[]).map(normalizeBrandItem)
+    : [];
+  return {
+    badge: String(d.badge || "Our Brands"),
+    title: String(d.title || "Trusted Rice Brands"),
+    subtitle: String(d.subtitle || ""),
+    bannerImage: String(d.bannerImage || ""),
+    storyHeading: String(d.storyHeading || "Our Brand Story"),
+    storyImage: String(d.storyImage || ""),
+    storyDescription: String(d.storyDescription || ""),
+    brands,
+  };
+}
+
+function normalizeRecipesPage(data: unknown): RecipesPageContent {
+  const d = data as Record<string, unknown>;
+  const recipes = Array.isArray(d.recipes)
+    ? (d.recipes as Record<string, unknown>[]).map(normalizeRecipeItem)
+    : [];
+  return {
+    badge: String(d.badge || "Culinary Heritage"),
+    title: String(d.title || "Signature Rice Recipes"),
+    subtitle: String(d.subtitle || ""),
+    bannerImage: String(d.bannerImage || ""),
+    recipes,
+  };
+}
+
+const DEFAULT_BRANDS_PAGE: BrandsPageContent = {
+  badge: "Our Brands",
+  title: "Trusted Rice Brands Built on Quality",
+  subtitle:
+    "Discover the retail and export brands that carry Liaqat Rice Mills' promise of purity, aroma, and consistent excellence to tables worldwide.",
+  bannerImage:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuCnVbO9ZoupsB8HB8siSnMNE3UboNLKVpx5aLTEtb9WAY3J4Qy6C4KHZo80GclGyfckfG7OPrOMKIeyDnmRoAG--Ff8bMVZM4Mv6lyNRVsJD00zD7pdpJem503V3AsIkkHvLqt4FR0xXb7IUxB0v0tuETL1to_BlTfOcqkUef96nNZL7m5gXhRc2LpGUdM_AL8Qe-uA5MTxYOfIkdhL7O6Zorc9ijrRn-M6jmm7HRfp-j69jpTBSLbHwHNImEBXPg8885V-g5obDag",
+  storyHeading: "A Legacy of Trust in Every Grain",
+  storyImage:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuBz9OX7J6E0XeGYYVgXmwJMp-UjvbTad7o6uDpo1sed7c5l310NziwPkf2kiZbCGpQAizFaPNgx0s97OHR04p8R8CGn6RkQlCByJ4B2fwOX05Hd-vz8fVcdSyDNfQyb6uKBPhXIuYVYSILJajnggPsSOiVOY6rs9Jo08Bt0I10mjPuab0TxY8Fu-U0UzgASoFB37JRtGDdwYvBPPTBGMsqjgitZv7cwkYnR3pG5QXKFX8COMbEZznUx4hDV1oqpx66MtVo72gTzwaM",
+  storyDescription:
+    "For decades, Liaqat Rice Mills has nurtured brands that stand for authentic Pakistani Basmati heritage, rigorous quality control, and customer confidence. From farm partnerships to precision milling and export-ready packaging, every brand reflects our commitment to transparency, food safety, and long-term relationships with distributors, retailers, and families who value premium rice.",
+  brands: [],
+};
+
+const DEFAULT_RECIPES_PAGE: RecipesPageContent = {
+  badge: "Culinary Heritage",
+  title: "Recipes Crafted with Premium Basmati",
+  subtitle:
+    "Explore traditional and modern dishes that showcase the aroma, texture, and elegance of Liaqat Rice Mills' finest grains.",
+  bannerImage:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuDVWueDBCFd1owMqfqegNt-HbeBq5ZOR5rLHuzVpnC0rgC9z45Uo36qOutxzonLPqizUs3tlVr4geaqjVG6UtYLjbS4VmUJ-5eGQkpYVuc-yhFGoDDG0PMJhMNuwADEQcUjUw2uEiyQPpamVuTdaLPOq_jPAOWMHOBCUiY22SyZxgrD1XPARtGBAFz6fqKILat0vXmhPQv0I-enkz06anV8sWukbiDTlvmPbDNmZywIQtJ3McD0zXK0cqW_4pymwqfrP4k3Thvz2Ac",
+  recipes: [],
+};
 
 function normalizeTeamSection(data: unknown): TeamSection {
   const d = data as { members?: unknown[] };
@@ -273,6 +403,8 @@ export interface AdminDataContextType {
   exportPageContent: ExportPageContent;
   footerContent: FooterContent;
   teamSection: TeamSection;
+  brandsPage: BrandsPageContent;
+  recipesPage: RecipesPageContent;
   products: CatalogProduct[];
   collections: ProductCollection[];
   packageWeights: PackageWeight[];
@@ -289,7 +421,6 @@ export interface AdminDataContextType {
   setCollections: React.Dispatch<React.SetStateAction<ProductCollection[]>>;
   setPackageWeights: React.Dispatch<React.SetStateAction<PackageWeight[]>>;
   setPackagingBagTypes: React.Dispatch<React.SetStateAction<PackagingBagType[]>>;
-  resetToDefault: () => void;
   refreshFromBackend: () => Promise<void>;
   refreshInquiries: () => Promise<void>;
   deleteInquiry: (id: number) => Promise<void>;
@@ -302,6 +433,7 @@ const DEFAULT_DATA = {
       subtitle: "Est. 1978 | Liaqat Rice Mill",
       desc: "From fertile Pakistani fields to prestigious international destinations, we deliver the world's finest Basmati through precision milling, rigorous inspection, and sustainable logistics.",
       image: "https://lh3.googleusercontent.com/aida-public/AB6AXuA3RBSaP3301DMFAZyZfcDqMxWIdTKbuXmPfhlCWSm-DYUccfiEEao0jfDfMIxrGBXJRUrdqJyef4VFw0AoEMTNHLCGGGYMd6OlLx6mA6upJjft8D0qMonvfTWNwoOaH4U8gWlfb7L-WLU7EPUdoUaCCtOBPfcDW-z-oZ_p_CeyAXsQ3K1V-59XtMLAuBfiWBZVw5rz1-JKvyUmA01-Sc8ZYDGirstGy9SWdmT4xoK9nwjI9TYp4a9y00vT0ibYkIf4xhmAkekrgMY",
+      video: "",
     },
     about: {
       title: "Pioneering the Future of Pure Basmati.",
@@ -530,7 +662,9 @@ const DEFAULT_BAG_TYPES: PackagingBagType[] = [
 const AdminDataContext = createContext<AdminDataContextType | undefined>(undefined);
 
 function mapApiProducts(raw: Record<string, unknown>[]): CatalogProduct[] {
-  if (!raw?.length) return DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>));
+  if (!Array.isArray(raw)) {
+    return DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>));
+  }
   return raw.map((p) => normalizeProduct(p));
 }
 
@@ -546,6 +680,8 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [exportPageContent, setExportPageContent] = useState(DEFAULT_DATA.exportPageContent);
   const [footerContent, setFooterContent] = useState(DEFAULT_DATA.footerContent);
   const [teamSection, setTeamSection] = useState(DEFAULT_TEAM_SECTION);
+  const [brandsPage, setBrandsPage] = useState(DEFAULT_BRANDS_PAGE);
+  const [recipesPage, setRecipesPage] = useState(DEFAULT_RECIPES_PAGE);
   const [products, setProducts] = useState<CatalogProduct[]>(
     DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>))
   );
@@ -554,6 +690,21 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [packagingBagTypes, setPackagingBagTypes] = useState<PackagingBagType[]>(DEFAULT_BAG_TYPES);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
+  const autoSaveTimers = useRef<Partial<Record<SectionKey, ReturnType<typeof setTimeout>>>>({});
+
+  const scheduleSectionSave = useCallback((key: SectionKey, value: unknown) => {
+    const existing = autoSaveTimers.current[key];
+    if (existing) clearTimeout(existing);
+
+    autoSaveTimers.current[key] = setTimeout(async () => {
+      try {
+        await apiSaveSection(key, value);
+        broadcastCmsUpdate();
+      } catch (e) {
+        console.error(`Failed to auto-save section "${key}"`, e);
+      }
+    }, AUTO_SAVE_MS);
+  }, []);
 
   const refreshInquiries = useCallback(async () => {
     try {
@@ -582,6 +733,8 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (sections.exportPageContent) setExportPageContent(sections.exportPageContent as typeof DEFAULT_DATA.exportPageContent);
     if (sections.footerContent) setFooterContent(sections.footerContent as typeof DEFAULT_DATA.footerContent);
     if (sections.teamSection) setTeamSection(normalizeTeamSection(sections.teamSection));
+    if (sections.brandsPage) setBrandsPage(normalizeBrandsPage(sections.brandsPage));
+    if (sections.recipesPage) setRecipesPage(normalizeRecipesPage(sections.recipesPage));
   }, []);
 
   const refreshFromBackend = useCallback(async () => {
@@ -643,6 +796,8 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       case "exportPageContent": return exportPageContent;
       case "footerContent": return footerContent;
       case "teamSection": return teamSection;
+      case "brandsPage": return brandsPage;
+      case "recipesPage": return recipesPage;
       default: return null;
     }
   };
@@ -682,8 +837,18 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       case "teamSection":
         setTeamSection(normalizeTeamSection(value));
         break;
+      case "brandsPage":
+        setBrandsPage(normalizeBrandsPage(value));
+        break;
+      case "recipesPage":
+        setRecipesPage(normalizeRecipesPage(value));
+        break;
       default:
         return;
+    }
+
+    if (CMS_SECTION_KEYS.includes(key as SectionKey)) {
+      scheduleSectionSave(key as SectionKey, value);
     }
   };
 
@@ -716,23 +881,14 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     broadcastCmsUpdate();
   };
 
-  const resetToDefault = () => {
-    setBanners(DEFAULT_DATA.banners);
-    setLegacySection(DEFAULT_DATA.legacySection);
-    setGlobalStandards(DEFAULT_DATA.globalStandards);
-    setGlobalFootprint(DEFAULT_DATA.globalFootprint);
-    setCorePhilosophy(DEFAULT_DATA.corePhilosophy);
-    setMillProcess(DEFAULT_DATA.millProcess);
-    setCeoSection(DEFAULT_DATA.ceoSection);
-    setProductPageContent(DEFAULT_DATA.productPageContent);
-    setExportPageContent(DEFAULT_DATA.exportPageContent);
-    setFooterContent(DEFAULT_DATA.footerContent);
-    setTeamSection(DEFAULT_TEAM_SECTION);
-    setProducts(DEFAULT_PRODUCTS.map((p) => normalizeProduct(p as unknown as Record<string, unknown>)));
-    setCollections(DEFAULT_COLLECTIONS);
-    setPackageWeights(DEFAULT_WEIGHTS);
-    setPackagingBagTypes(DEFAULT_BAG_TYPES);
-  };
+  useEffect(() => {
+    const timers = autoSaveTimers.current;
+    return () => {
+      Object.values(timers).forEach((timer) => {
+        if (timer) clearTimeout(timer);
+      });
+    };
+  }, []);
 
   return (
     <AdminDataContext.Provider
@@ -748,6 +904,8 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         exportPageContent,
         footerContent,
         teamSection,
+        brandsPage,
+        recipesPage,
         products,
         collections,
         packageWeights,
@@ -764,7 +922,6 @@ export const AdminDataProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setCollections,
         setPackageWeights,
         setPackagingBagTypes,
-        resetToDefault,
         refreshFromBackend,
         refreshInquiries,
         deleteInquiry,

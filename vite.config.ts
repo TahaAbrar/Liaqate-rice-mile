@@ -5,8 +5,11 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendHost = env.BACKEND_HOST || '127.0.0.1';
-  const backendPort = env.BACKEND_PORT || '8006';
+  const backendHost = mode === 'development' ? '127.0.0.1' : (env.BACKEND_HOST || '127.0.0.1');
+  const backendPort =
+    mode === 'development'
+      ? env.DEV_BACKEND_PORT || env.BACKEND_PORT || '8006'
+      : env.BACKEND_PORT || '8006';
   const frontendPort = Number(env.PUBLIC_PORT || env.VITE_PORT || '3000');
   const frontendHost = env.VITE_HOST || '0.0.0.0';
   const apiProxy = {

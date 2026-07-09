@@ -14,11 +14,15 @@ export default function Header({ onRequestQuote }: HeaderProps) {
     { id: ROUTES.home, label: "Home" },
     { id: ROUTES.about, label: "About" },
     { id: ROUTES.products, label: "Product" },
+    { id: ROUTES.brands, label: "Brands" },
+    { id: ROUTES.recipes, label: "Recipes" },
     { id: ROUTES.export, label: "Export" },
   ] as const;
 
   const isActive = (route: string) =>
-    path === route || (route === ROUTES.products && matchPath("/products/:slug", path));
+    path === route ||
+    (route === ROUTES.products && matchPath("/products/:slug", path)) ||
+    (route === ROUTES.recipes && matchPath("/recipes/:id", path));
 
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-white/95 backdrop-blur-xl border-b border-outline-variant/10 shadow-sm transition-all duration-300">

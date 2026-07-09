@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/catalog/<str:key>/", views.catalog_list, name="catalog_list"),
     path("api/catalog/<str:key>/save/", views.catalog_save, name="catalog_save"),
     path("api/upload/image/", views.upload_image, name="upload_image"),
+    path("api/upload/video/", views.upload_video, name="upload_video"),
     path("api/geocode/", views.geocode_address, name="geocode_address"),
     path("api/geocode/suggest/", views.geocode_suggest, name="geocode_suggest"),
     path("api/inquiries/", views.inquiry_list, name="inquiry_list"),

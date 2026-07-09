@@ -13,7 +13,9 @@ export type SectionKey =
   | "productPageContent"
   | "exportPageContent"
   | "footerContent"
-  | "teamSection";
+  | "teamSection"
+  | "brandsPage"
+  | "recipesPage";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${url}`, {
@@ -144,6 +146,22 @@ export async function uploadImage(file: File): Promise<string> {
     body: formData,
   });
   if (!res.ok) throw new Error("Upload failed");
+  const data = (await res.json()) as { url: string };
+  return data.url;
+}
+
+export async function uploadVideo(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("video", file);
+  const API_BASE = import.meta.env.VITE_API_URL ?? "";
+  const res = await fetch(`${API_BASE}/api/upload/video/`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error || "Upload failed");
+  }
   const data = (await res.json()) as { url: string };
   return data.url;
 }

@@ -130,6 +130,16 @@ export default function Footer() {
               </button>
             </li>
             <li>
+              <button onClick={() => navigate(ROUTES.brands)} className="hover:text-primary transition-colors text-left">
+                Brands
+              </button>
+            </li>
+            <li>
+              <button onClick={() => navigate(ROUTES.recipes)} className="hover:text-primary transition-colors text-left">
+                Recipes
+              </button>
+            </li>
+            <li>
               <button onClick={() => navigate(ROUTES.export)} className="hover:text-primary transition-colors text-left">
                 Export
               </button>

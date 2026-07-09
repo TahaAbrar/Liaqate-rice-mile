@@ -6,6 +6,9 @@ import AboutView from "./components/AboutView";
 import ProductsView from "./components/ProductsView";
 import ExportView from "./components/ExportView";
 import ProductDetailView from "./components/ProductDetailView";
+import BrandsView from "./components/BrandsView";
+import RecipesView from "./components/RecipesView";
+import RecipeDetailView from "./components/RecipeDetailView";
 import QuotationModal from "./components/QuotationModal";
 import LoginPage from "./components/Admin/LoginPage";
 import Dashboard from "./components/Admin/Dashboard";
@@ -62,6 +65,15 @@ function AppContent() {
       return (
         <ProductsView onRequestQuote={() => setIsQuoteModalOpen(true)} />
       );
+    }
+    if (path === ROUTES.brands) {
+      return <BrandsView />;
+    }
+    if (path === ROUTES.recipes) {
+      return <RecipesView />;
+    }
+    if (matchPath("/recipes/:id", path)) {
+      return <RecipeDetailView />;
     }
     if (path === ROUTES.export) {
       return (

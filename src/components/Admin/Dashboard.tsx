@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { useAdminData } from "../../context/AdminDataContext";
 import type { SectionKey } from "../../api";
 import ImagePicker from "./ImagePicker";
+import VideoPicker from "./VideoPicker";
 import ProductCatalogAdmin from "./ProductCatalogAdmin";
 import InquiriesAdmin from "./InquiriesAdmin";
 import TeamAdmin from "./TeamAdmin";
+import BrandsAdmin from "./BrandsAdmin";
+import RecipesAdmin from "./RecipesAdmin";
 import ConfirmModal from "./ConfirmModal";
 import LocationMapPicker from "./LocationMapPicker";
 import { 
@@ -16,7 +19,6 @@ import {
   User, 
   HelpCircle, 
   Save, 
-  RotateCcw, 
   Sparkles, 
   CheckCircle, 
   LogOut, 
@@ -33,6 +35,8 @@ import {
   PanelBottom,
   MessageSquare,
   Users,
+  Award,
+  ChefHat,
 } from "lucide-react";
 
 interface DashboardProps {
@@ -52,7 +56,9 @@ type ActiveTab =
   | "footer"
   | "export_all"
   | "inquiries"
-  | "team";
+  | "team"
+  | "brands"
+  | "recipes";
 
 export default function Dashboard({ onLogout }: DashboardProps) {
   const {
@@ -68,13 +74,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     footerContent,
     updateData,
     saveSection,
-    resetToDefault,
   } = useAdminData();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("banners");
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const TAB_SECTION_MAP: Partial<Record<ActiveTab, SectionKey>> = {
     banners: "banners",
@@ -88,6 +92,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     footer: "footerContent",
     export_all: "exportPageContent",
     team: "teamSection",
+    brands: "brandsPage",
+    recipes: "recipesPage",
   };
 
   const TAB_LABELS: Record<ActiveTab, string> = {
@@ -104,6 +110,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     export_all: "Export Capabilities",
     inquiries: "Inquiry Messages",
     team: "Team Employees",
+    brands: "Brands Page",
+    recipes: "Recipes Page",
   };
 
   const showToast = (msg: string, type: "success" | "error" = "success") => {
@@ -315,13 +323,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowResetConfirm(true)}
-            className="px-4 py-2.5 border border-slate-800 hover:border-red-400 hover:text-red-400 rounded-lg text-xs font-sans font-bold uppercase tracking-wider transition-all flex items-center gap-2"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Reset Defaults
-          </button>
-          <button
             onClick={onLogout}
             className="px-4 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-lg text-xs font-sans font-bold text-slate-200 uppercase tracking-wider transition-all flex items-center gap-2"
           >
@@ -352,6 +353,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             { id: "export_all", label: "Export Capabilities", icon: Anchor },
             { id: "inquiries", label: "Inquiry Messages", icon: MessageSquare },
             { id: "team", label: "Team Employees", icon: Users },
+            { id: "brands", label: "Brands Page", icon: Award },
+            { id: "recipes", label: "Recipes Page", icon: ChefHat },
           ].map((item) => {
             const IconComp = item.icon;
             const isSelected = activeTab === item.id;
@@ -426,8 +429,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                       className="w-full border border-outline-variant rounded-lg p-3 text-xs font-sans bg-slate-50 focus:bg-white focus:outline-none focus:border-primary resize-none"
                     />
                   </div>
+                  <VideoPicker
+                    label="Home Banner Video"
+                    value={banners.home.video || ""}
+                    poster={banners.home.image}
+                    onChange={(url) => handleBannerChange("home", "video", url)}
+                  />
                   <ImagePicker
-                    label="Home Banner Image"
+                    label="Fallback Poster Image (shown before video loads)"
                     value={banners.home.image}
                     onChange={(url) => handleBannerChange("home", "image", url)}
                   />
@@ -1268,6 +1277,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <TeamAdmin />
             )}
 
+            {activeTab === "brands" && (
+              <BrandsAdmin />
+            )}
+
+            {activeTab === "recipes" && (
+              <RecipesAdmin />
+            )}
+
             {activeTab === "export_all" && (
               <div className="space-y-8">
                 {/* Header info */}
@@ -1596,7 +1613,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           {activeTab !== "product_catalog" && activeTab !== "inquiries" && (
           <div className="bg-slate-50 px-6 py-4 border-t border-outline-variant/30 flex justify-between items-center">
             <p className="text-[10px] font-sans text-slate-500">
-              Changes preview live. Click Save to store <strong>{TAB_LABELS[activeTab]}</strong> in the database.
+              Changes auto-save to the database. Use Save now for an immediate write of <strong>{TAB_LABELS[activeTab]}</strong>.
             </p>
             <button
               type="button"
@@ -1615,19 +1632,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           )}
         </div>
       </div>
-
-      <ConfirmModal
-        open={showResetConfirm}
-        title="Reset All Defaults?"
-        message="Are you sure you want to reset all content changes to system defaults? This will restore the original demo data."
-        confirmLabel="Reset"
-        onConfirm={() => {
-          resetToDefault();
-          showToast("System database reset to initial values!", "success");
-          setShowResetConfirm(false);
-        }}
-        onCancel={() => setShowResetConfirm(false)}
-      />
     </div>
   );
 }

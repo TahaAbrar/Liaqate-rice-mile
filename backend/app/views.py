@@ -25,6 +25,8 @@ SECTION_KEYS = [
     "exportPageContent",
     "footerContent",
     "teamSection",
+    "brandsPage",
+    "recipesPage",
     "productCollections",
     "packageWeights",
     "packagingBagTypes",
@@ -260,6 +262,44 @@ def upload_image(request):
 
     with open(dest, "wb+") as f:
         for chunk in image.chunks():
+            f.write(chunk)
+
+    url = f"{settings.MEDIA_URL}uploads/{filename}"
+    return JsonResponse({"url": url, "filename": filename})
+
+
+ALLOWED_VIDEO_TYPES = {
+    "video/mp4",
+    "video/webm",
+    "video/ogg",
+    "video/quicktime",
+}
+MAX_VIDEO_BYTES = 50 * 1024 * 1024  # 50 MB
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def upload_video(request):
+    video = request.FILES.get("video")
+    if not video:
+        return JsonResponse({"error": "No video file provided"}, status=400)
+
+    content_type = (video.content_type or "").lower()
+    if content_type not in ALLOWED_VIDEO_TYPES:
+        return JsonResponse({"error": "Unsupported video format. Use MP4, WebM, or OGG."}, status=400)
+
+    if video.size > MAX_VIDEO_BYTES:
+        return JsonResponse({"error": "Video must be under 50 MB."}, status=400)
+
+    upload_dir = Path(settings.MEDIA_ROOT) / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = Path(video.name).suffix.lower() or ".mp4"
+    filename = f"{uuid.uuid4().hex}{ext}"
+    dest = upload_dir / filename
+
+    with open(dest, "wb+") as f:
+        for chunk in video.chunks():
             f.write(chunk)
 
     url = f"{settings.MEDIA_URL}uploads/{filename}"

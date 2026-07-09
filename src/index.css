@@ -65,3 +65,59 @@ body {
   width: 100%;
 }
 
+.rich-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.rich-text-content p,
+.rich-text-editor p {
+  margin-bottom: 1rem;
+}
+
+.rich-text-content p:last-child,
+.rich-text-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-content strong,
+.rich-text-content b,
+.rich-text-editor strong,
+.rich-text-editor b {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rich-text-content em,
+.rich-text-content i,
+.rich-text-editor em,
+.rich-text-editor i {
+  font-style: italic;
+}
+
+.rich-text-content u,
+.rich-text-editor u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-text-content ul,
+.rich-text-editor ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.rich-text-content ol,
+.rich-text-editor ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.rich-text-content li,
+.rich-text-editor li {
+  margin-bottom: 0.35rem;
+}
+

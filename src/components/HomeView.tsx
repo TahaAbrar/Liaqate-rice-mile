@@ -1,6 +1,7 @@
 import { ArrowRight, Shield, Award, Globe, CheckCircle, Settings, Sprout, Truck, Search } from "lucide-react";
 import { useAdminData } from "../context/AdminDataContext";
 import { ROUTES, useRouter } from "../lib/router";
+import { resolveMediaUrl } from "../lib/mediaUrl";
 import { LocationMapEmbed } from "./LocationMap";
 import FeaturedProductsCarousel from "./FeaturedProductsCarousel";
 
@@ -18,11 +19,23 @@ export default function HomeView() {
       {/* Hero Section */}
       <section className="relative min-h-[680px] flex items-center overflow-hidden bg-primary/20">
         <div className="absolute inset-0 z-0">
-          <img 
-            src={banners.home.image}
-            alt="Vibrant green rice paddies farmland"
-            className="w-full h-full object-cover brightness-[0.7]"
-          />
+          {banners.home.video ? (
+            <video
+              src={resolveMediaUrl(banners.home.video)}
+              poster={banners.home.image ? resolveMediaUrl(banners.home.image) : undefined}
+              className="w-full h-full object-cover brightness-[0.7]"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+          ) : (
+            <img
+              src={banners.home.image}
+              alt="Vibrant green rice paddies farmland"
+              className="w-full h-full object-cover brightness-[0.7]"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/40 to-transparent"></div>
           <div className="absolute bottom-0 left-0 w-full h-48 bg-gradient-to-t from-background to-transparent"></div>
         </div>

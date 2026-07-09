@@ -19,7 +19,7 @@ export default function ProductsView({ onRequestQuote }: ProductsViewProps) {
 
   const filteredProducts = products.filter((product) => {
     if (activeFilter === "all") return true;
-    return product.collectionId === activeFilter;
+    return product.collectionIds.includes(activeFilter);
   });
 
   return (

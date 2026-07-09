@@ -7,6 +7,7 @@ SECTIONS = {
             "subtitle": "Est. 1978 | Liaqat Rice Mill",
             "desc": "From fertile Pakistani fields to prestigious international destinations, we deliver the world's finest Basmati through precision milling, rigorous inspection, and sustainable logistics.",
             "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuA3RBSaP3301DMFAZyZfcDqMxWIdTKbuXmPfhlCWSm-DYUccfiEEao0jfDfMIxrGBXJRUrdqJyef4VFw0AoEMTNHLCGGGYMd6OlLx6mA6upJjft8D0qMonvfTWNwoOaH4U8gWlfb7L-WLU7EPUdoUaCCtOBPfcDW-z-oZ_p_CeyAXsQ3K1V-59XtMLAuBfiWBZVw5rz1-JKvyUmA01-Sc8ZYDGirstGy9SWdmT4xoK9nwjI9TYp4a9y00vT0ibYkIf4xhmAkekrgMY",
+            "video": "",
         },
         "about": {
             "title": "Pioneering the Future of Pure Basmati.",
@@ -194,6 +195,23 @@ SECTIONS = {
                 "description": "Elena handles the documentation pipeline, coordinating customs clearance and phytosanitary licensing with global authorities.",
             },
         ],
+    },
+    "brandsPage": {
+        "badge": "Our Brands",
+        "title": "Trusted Rice Brands Built on Quality",
+        "subtitle": "Discover the retail and export brands that carry Liaqat Rice Mills' promise of purity, aroma, and consistent excellence to tables worldwide.",
+        "bannerImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuCnVbO9ZoupsB8HB8siSnMNE3UboNLKVpx5aLTEtb9WAY3J4Qy6C4KHZo80GclGyfckfG7OPrOMKIeyDnmRoAG--Ff8bMVZM4Mv6lyNRVsJD00zD7pdpJem503V3AsIkkHvLqt4FR0xXb7IUxB0v0tuETL1to_BlTfOcqkUef96nNZL7m5gXhRc2LpGUdM_AL8Qe-uA5MTxYOfIkdhL7O6Zorc9ijrRn-M6jmm7HRfp-j69jpTBSLbHwHNImEBXPg8885V-g5obDag",
+        "storyHeading": "A Legacy of Trust in Every Grain",
+        "storyImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuBz9OX7J6E0XeGYYVgXmwJMp-UjvbTad7o6uDpo1sed7c5l310NziwPkf2kiZbCGpQAizFaPNgx0s97OHR04p8R8CGn6RkQlCByJ4B2fwOX05Hd-vz8fVcdSyDNfQyb6uKBPhXIuYVYSILJajnggPsSOiVOY6rs9Jo08Bt0I10mjPuab0TxY8Fu-U0UzgASoFB37JRtGDdwYvBPPTBGMsqjgitZv7cwkYnR3pG5QXKFX8COMbEZznUx4hDV1oqpx66MtVo72gTzwaM",
+        "storyDescription": "For decades, Liaqat Rice Mills has nurtured brands that stand for authentic Pakistani Basmati heritage, rigorous quality control, and customer confidence. From farm partnerships to precision milling and export-ready packaging, every brand reflects our commitment to transparency, food safety, and long-term relationships with distributors, retailers, and families who value premium rice.",
+        "brands": [],
+    },
+    "recipesPage": {
+        "badge": "Culinary Heritage",
+        "title": "Recipes Crafted with Premium Basmati",
+        "subtitle": "Explore traditional and modern dishes that showcase the aroma, texture, and elegance of Liaqat Rice Mills' finest grains.",
+        "bannerImage": "https://lh3.googleusercontent.com/aida-public/AB6AXuDVWueDBCFd1owMqfqegNt-HbeBq5ZOR5rLHuzVpnC0rgC9z45Uo36qOutxzonLPqizUs3tlVr4geaqjVG6UtYLjbS4VmUJ-5eGQkpYVuc-yhFGoDDG0PMJhMNuwADEQcUjUw2uEiyQPpamVuTdaLPOq_jPAOWMHOBCUiY22SyZxgrD1XPARtGBAFz6fqKILat0vXmhPQv0I-enkz06anV8sWukbiDTlvmPbDNmZywIQtJ3McD0zXK0cqW_4pymwqfrP4k3Thvz2Ac",
+        "recipes": [],
     },
 }
 

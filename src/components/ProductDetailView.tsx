@@ -4,10 +4,12 @@ import { Ruler, Calendar, ArrowRight, ShieldCheck, Mail, Sparkles, CheckCircle2 
 import { useAdminData } from "../context/AdminDataContext";
 import { fetchProductBySlug } from "../api";
 import { normalizeProduct } from "../lib/productUtils";
-import { formatWeight } from "../types/catalog";
+import { formatWeight, getProductGalleryImages, getProductPackingWeights } from "../types/catalog";
 import type { CatalogProduct } from "../types/catalog";
 import { ROUTES, useParams, useRouter } from "../lib/router";
 import BulkInquiryForm from "./BulkInquiryForm";
+import { RichTextContent } from "./Admin/RichTextEditor";
+import ProductImageGallery from "./ProductImageGallery";
 
 export default function ProductDetailView() {
   const { slug } = useParams("/products/:slug");
@@ -85,6 +87,9 @@ export default function ProductDetailView() {
     };
   });
 
+  const galleryImages = getProductGalleryImages(product);
+  const packingWeights = getProductPackingWeights(product, packageWeights);
+
   const showSensory =
     product.exquisiteAroma ||
     product.silkPolished ||
@@ -95,68 +100,86 @@ export default function ProductDetailView() {
   return (
     <div className="w-full">
       {/* Section 1: Product Hero */}
-      <section className="relative overflow-hidden pt-12 pb-24 bg-white">
+      <section className="relative overflow-hidden pt-12 pb-16 bg-white">
         <div className="absolute inset-0 grain-texture -z-10"></div>
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <div className="relative group">
-            <div className="absolute -inset-4 bg-primary-fixed/20 rounded-full blur-3xl group-hover:bg-primary-fixed/30 transition-all duration-700"></div>
-            <div className="relative rounded-2xl overflow-hidden aspect-square border border-outline-variant/20 shadow-2xl bg-surface">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-start">
+            <ProductImageGallery images={galleryImages} productName={product.name} />
 
-          <div className="space-y-8">
-            <div>
-              <span className="inline-block bg-primary-fixed text-on-primary-fixed-variant px-4 py-1.5 rounded-sm font-sans text-xs font-bold uppercase tracking-[0.2em] shadow-sm">
-                {product.tagName}
-              </span>
-              <h1 className="font-serif-title text-4xl sm:text-6xl text-primary leading-tight mt-4 font-medium">
-                {product.name}
-              </h1>
-              {product.subtitle && (
-                <p className="font-serif-title text-2xl text-secondary italic mt-2 font-medium">
-                  {product.subtitle}
+            <div className="space-y-8">
+              <div>
+                <span className="inline-block bg-primary-fixed text-on-primary-fixed-variant px-4 py-1.5 rounded-sm font-sans text-xs font-bold uppercase tracking-[0.2em] shadow-sm">
+                  {product.tagName}
+                </span>
+                <h1 className="font-serif-title text-4xl sm:text-5xl lg:text-6xl text-primary leading-tight mt-4 font-medium">
+                  {product.name}
+                </h1>
+                {product.subtitle && (
+                  <p className="font-serif-title text-xl sm:text-2xl text-secondary italic mt-2 font-medium">
+                    {product.subtitle}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-12 border-y border-outline-variant/20 py-8">
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                    <Calendar className="w-4 h-4 text-secondary" />
+                    <p className="font-sans text-xs font-bold text-on-surface-variant uppercase tracking-wider">Aged</p>
+                  </div>
+                  <p className="font-serif-title text-3xl text-primary font-bold mt-1">{product.age}</p>
+                </div>
+                <div className="text-center sm:text-left border-l border-outline-variant/20 pl-12">
+                  <div className="flex items-center gap-1.5 justify-center sm:justify-start">
+                    <Ruler className="w-4 h-4 text-secondary" />
+                    <p className="font-sans text-xs font-bold text-on-surface-variant uppercase tracking-wider">Avg. Length</p>
+                  </div>
+                  <p className="font-serif-title text-3xl text-primary font-bold mt-1">{product.length}</p>
+                </div>
+              </div>
+
+              {product.description && (
+                <p className="font-sans text-base sm:text-lg text-on-surface-variant leading-relaxed">
+                  {product.description}
                 </p>
               )}
-            </div>
 
-            <div className="flex gap-12 border-y border-outline-variant/20 py-8">
-              <div className="text-center sm:text-left">
-                <div className="flex items-center gap-1.5 justify-center sm:justify-start">
-                  <Calendar className="w-4 h-4 text-secondary" />
-                  <p className="font-sans text-xs font-bold text-on-surface-variant uppercase tracking-wider">Aged</p>
+              {packingWeights.length > 0 && (
+                <div className="p-5 bg-surface-container-low border border-outline-variant/20 rounded-xl">
+                  <p className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">
+                    Available Packing
+                  </p>
+                  <p className="font-sans text-base sm:text-lg text-primary font-semibold">
+                    {packingWeights.join(", ")}
+                  </p>
                 </div>
-                <p className="font-serif-title text-3xl text-primary font-bold mt-1">{product.age}</p>
-              </div>
-              <div className="text-center sm:text-left border-l border-outline-variant/20 pl-12">
-                <div className="flex items-center gap-1.5 justify-center sm:justify-start">
-                  <Ruler className="w-4 h-4 text-secondary" />
-                  <p className="font-sans text-xs font-bold text-on-surface-variant uppercase tracking-wider">Avg. Length</p>
-                </div>
-                <p className="font-serif-title text-3xl text-primary font-bold mt-1">{product.length}</p>
-              </div>
-            </div>
+              )}
 
-            <p className="font-sans text-base sm:text-lg text-on-surface-variant leading-relaxed max-w-lg">
-              {product.fullDescription}
-            </p>
-
-            <div className="pt-4">
-              <button
-                onClick={() => {
-                  const el = document.getElementById("quote-section");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="bg-primary hover:bg-primary-container text-white px-10 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:scale-105 shadow-md"
-              >
-                Inquire for Bulk Order
-              </button>
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("quote-section");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="bg-primary hover:bg-primary-container text-white px-10 py-4 rounded-full font-sans text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:scale-105 shadow-md"
+                >
+                  Inquire for Bulk Order
+                </button>
+              </div>
             </div>
           </div>
+
+          {product.fullDescription && (
+            <div className="mt-14 p-8 sm:p-10 bg-surface-container-low border border-outline-variant/20 rounded-2xl shadow-sm">
+              <h2 className="font-serif-title text-2xl sm:text-3xl text-primary font-medium mb-6">
+                Product Description
+              </h2>
+              <RichTextContent
+                html={product.fullDescription}
+                className="text-base sm:text-lg text-on-surface-variant leading-relaxed"
+              />
+            </div>
+          )}
         </div>
       </section>
 

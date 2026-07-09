@@ -7,6 +7,20 @@ const CATEGORY_TO_COLLECTION: Record<string, string> = {
   "Premium Export": "premium-export",
 };
 
+function normalizeCollectionIds(raw: Record<string, unknown>): string[] {
+  if (Array.isArray(raw.collectionIds)) {
+    return (raw.collectionIds as unknown[])
+      .map((id) => String(id).trim())
+      .filter(Boolean);
+  }
+  const legacyId = String(raw.collectionId || "").trim();
+  return legacyId ? [legacyId] : [];
+}
+
+export function productBelongsToCollection(product: CatalogProduct, collectionId: string): boolean {
+  return product.collectionIds.includes(collectionId);
+}
+
 /** Normalize legacy product JSON from data.ts / old API into CatalogProduct shape. */
 export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
   const id = String(raw.id || raw.slug || "");
@@ -18,9 +32,12 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
       tagName: String(raw.tagName || ""),
       name: String(raw.name || ""),
       subtitle: String(raw.subtitle || ""),
-      collectionId: String(raw.collectionId || ""),
+      collectionIds: normalizeCollectionIds(raw),
       image: String(raw.image || ""),
       catalogImage: String(raw.catalogImage || raw.image || ""),
+      galleryImages: Array.isArray(raw.galleryImages)
+        ? (raw.galleryImages as unknown[]).map((url) => String(url)).filter(Boolean)
+        : [],
       age: String(raw.age || ""),
       length: String(raw.length || ""),
       description: String(raw.description || ""),
@@ -70,6 +87,9 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
   ].filter((s) => s.standardRequirement);
 
   const badges = Array.isArray(raw.badges) ? (raw.badges as string[]) : [];
+  const legacyCollectionId =
+    CATEGORY_TO_COLLECTION[category] || category.toLowerCase().replace(/\s+/g, "-");
+  const collectionIds = normalizeCollectionIds(raw);
 
   return {
     id,
@@ -77,9 +97,12 @@ export function normalizeProduct(raw: Record<string, unknown>): CatalogProduct {
     tagName: String(raw.grade || raw.tagName || "Premium Export Grade"),
     name: String(raw.name || ""),
     subtitle: String(raw.subtitle || ""),
-    collectionId: CATEGORY_TO_COLLECTION[category] || category.toLowerCase().replace(/\s+/g, "-"),
+    collectionIds: collectionIds.length ? collectionIds : legacyCollectionId ? [legacyCollectionId] : [],
     image: String(raw.image || ""),
     catalogImage: String(raw.catalogImage || raw.image || ""),
+    galleryImages: Array.isArray(raw.galleryImages)
+      ? (raw.galleryImages as unknown[]).map((url) => String(url)).filter(Boolean)
+      : [],
     age: String(raw.age || ""),
     length: String(raw.length || ""),
     description: String(raw.description || ""),

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAdminData } from "../../context/AdminDataContext";
 import ImagePicker from "./ImagePicker";
+import MultiImagePicker from "./MultiImagePicker";
+import RichTextEditor from "./RichTextEditor";
 import type {
   CatalogProduct,
   PackagingOption,
@@ -10,6 +12,7 @@ import type {
   TechnicalSpec,
 } from "../../types/catalog";
 import { formatWeight, slugify } from "../../types/catalog";
+import { formatDescriptionForDisplay, richTextIsEmpty, stripHtml } from "../../lib/richText";
 import {
   Plus,
   X,
@@ -32,9 +35,10 @@ const EMPTY_PRODUCT = (): CatalogProduct => ({
   tagName: "",
   name: "",
   subtitle: "",
-  collectionId: "",
+  collectionIds: [],
   image: "",
   catalogImage: "",
+  galleryImages: [],
   age: "",
   length: "",
   description: "",
@@ -86,6 +90,7 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
     weightId: "",
     bagTypeId: "",
   });
+  const [collectionDraft, setCollectionDraft] = useState("");
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
     message: string;
@@ -120,82 +125,115 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
     setIsFormOpen(false);
     setProductForm(EMPTY_PRODUCT());
     setPackDraft({ weightId: "", bagTypeId: "" });
+    setCollectionDraft("");
   };
 
   const genId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
 
-  const handleSaveCatalog = async (
-    key: "productCollections" | "packageWeights" | "packagingBagTypes",
-    items: unknown[],
-    label: string
-  ) => {
-    setSaving(true);
-    try {
-      await saveCatalogItems(key, items);
-      onNotify(`${label} saved successfully!`, "success");
-    } catch {
-      onNotify(`Failed to save ${label}. Is backend running?`, "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addCollection = () => {
+  const addCollection = async () => {
     const name = newCollectionName.trim();
     if (!name) return;
     const item: ProductCollection = { id: slugify(name), name };
     if (collections.some((c) => c.id === item.id)) return;
     const updated = [...collections, item];
-    setCollections(updated);
-    setNewCollectionName("");
-    handleSaveCatalog("productCollections", updated, "Collections");
+    setSaving(true);
+    try {
+      await saveCatalogItems("productCollections", updated);
+      setCollections(updated);
+      setNewCollectionName("");
+      onNotify("Collections saved successfully!", "success");
+    } catch {
+      onNotify("Failed to save Collections. Is backend running?", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeCollection = (id: string) => {
     askConfirm(
       "Delete Collection?",
       "Products using this collection will need reassignment. This cannot be undone.",
-      () => {
+      async () => {
         const updated = collections.filter((c) => c.id !== id);
-        setCollections(updated);
-        handleSaveCatalog("productCollections", updated, "Collections");
+        setSaving(true);
+        try {
+          await saveCatalogItems("productCollections", updated);
+          setCollections(updated);
+          onNotify("Collections saved successfully!", "success");
+        } catch {
+          onNotify("Failed to save Collections. Is backend running?", "error");
+        } finally {
+          setSaving(false);
+        }
       }
     );
   };
 
-  const addWeight = () => {
+  const addWeight = async () => {
     const num = parseFloat(newWeightValue);
     if (!num || num <= 0) return;
     const item: PackageWeight = { id: genId("w"), value: num };
     const updated = [...packageWeights, item];
-    setPackageWeights(updated);
-    setNewWeightValue("");
-    handleSaveCatalog("packageWeights", updated, "Package Weights");
+    setSaving(true);
+    try {
+      await saveCatalogItems("packageWeights", updated);
+      setPackageWeights(updated);
+      setNewWeightValue("");
+      onNotify("Package Weights saved successfully!", "success");
+    } catch {
+      onNotify("Failed to save Package Weights. Is backend running?", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeWeight = (id: string) => {
-    askConfirm("Delete Weight?", "Remove this package weight from the catalog?", () => {
+    askConfirm("Delete Weight?", "Remove this package weight from the catalog?", async () => {
       const updated = packageWeights.filter((w) => w.id !== id);
-      setPackageWeights(updated);
-      handleSaveCatalog("packageWeights", updated, "Package Weights");
+      setSaving(true);
+      try {
+        await saveCatalogItems("packageWeights", updated);
+        setPackageWeights(updated);
+        onNotify("Package Weights saved successfully!", "success");
+      } catch {
+        onNotify("Failed to save Package Weights. Is backend running?", "error");
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
-  const addBagType = () => {
+  const addBagType = async () => {
     const name = newBagName.trim();
     if (!name) return;
     const item: PackagingBagType = { id: genId("bag"), name };
     const updated = [...packagingBagTypes, item];
-    setPackagingBagTypes(updated);
-    setNewBagName("");
-    handleSaveCatalog("packagingBagTypes", updated, "Packaging Bag Types");
+    setSaving(true);
+    try {
+      await saveCatalogItems("packagingBagTypes", updated);
+      setPackagingBagTypes(updated);
+      setNewBagName("");
+      onNotify("Packaging Bag Types saved successfully!", "success");
+    } catch {
+      onNotify("Failed to save Packaging Bag Types. Is backend running?", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const removeBagType = (id: string) => {
-    askConfirm("Delete Bag Type?", "Remove this packaging bag type from the catalog?", () => {
+    askConfirm("Delete Bag Type?", "Remove this packaging bag type from the catalog?", async () => {
       const updated = packagingBagTypes.filter((b) => b.id !== id);
-      setPackagingBagTypes(updated);
-      handleSaveCatalog("packagingBagTypes", updated, "Packaging Bag Types");
+      setSaving(true);
+      try {
+        await saveCatalogItems("packagingBagTypes", updated);
+        setPackagingBagTypes(updated);
+        onNotify("Packaging Bag Types saved successfully!", "success");
+      } catch {
+        onNotify("Failed to save Packaging Bag Types. Is backend running?", "error");
+      } finally {
+        setSaving(false);
+      }
     });
   };
 
@@ -204,11 +242,11 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
     setIsFormOpen(true);
     setProductForm({
       ...EMPTY_PRODUCT(),
-      collectionId: collections[0]?.id || "",
       qualityPromises: [""],
       technicalSpecs: [{ parameter: "", standardRequirement: "", testingMethod: "" }],
     });
     setPackDraft({ weightId: "", bagTypeId: "" });
+    setCollectionDraft("");
     setTab("products");
   };
 
@@ -217,6 +255,8 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
     setIsFormOpen(true);
     setProductForm({
       ...p,
+      collectionIds: [...p.collectionIds],
+      galleryImages: [...(p.galleryImages || [])],
       qualityPromises: p.qualityPromises.length ? [...p.qualityPromises] : [""],
       technicalSpecs: p.technicalSpecs.length
         ? p.technicalSpecs.map((s) => ({ ...s }))
@@ -224,6 +264,7 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
       packagingOptions: [...p.packagingOptions],
     });
     setPackDraft({ weightId: "", bagTypeId: "" });
+    setCollectionDraft("");
     setTab("products");
   };
 
@@ -233,6 +274,17 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
 
   const usedWeightIds = productForm.packagingOptions.map((p) => p.weightId);
   const availableWeights = packageWeights.filter((w) => !usedWeightIds.includes(w.id));
+  const availableCollections = collections.filter((c) => !productForm.collectionIds.includes(c.id));
+
+  const addProductCollection = () => {
+    if (!collectionDraft) return;
+    updateForm({ collectionIds: [...productForm.collectionIds, collectionDraft] });
+    setCollectionDraft("");
+  };
+
+  const removeProductCollection = (id: string) => {
+    updateForm({ collectionIds: productForm.collectionIds.filter((collectionId) => collectionId !== id) });
+  };
 
   const confirmPackaging = () => {
     if (!packDraft.weightId || !packDraft.bagTypeId) return;
@@ -250,11 +302,11 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
   const validateProduct = (): string | null => {
     if (!productForm.tagName.trim()) return "Product tag name is required";
     if (!productForm.name.trim()) return "Product name is required";
-    if (!productForm.collectionId) return "Please select a collection";
+    if (!productForm.collectionIds.length) return "Please add at least one collection";
     if (!productForm.image.trim()) return "Product image is required";
     if (!productForm.age.trim()) return "Rice age is required";
     if (!productForm.length.trim()) return "Length is required";
-    if (!productForm.fullDescription.trim()) return "Product description is required";
+    if (richTextIsEmpty(productForm.fullDescription)) return "Product description is required";
     const promises = productForm.qualityPromises.filter((p) => p.trim());
     if (promises.length === 0) return "At least one Quality Promise is required";
     return null;
@@ -276,7 +328,8 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
       id: slug,
       slug,
       catalogImage: productForm.catalogImage || productForm.image,
-      description: productForm.description || productForm.fullDescription.slice(0, 200),
+      fullDescription: formatDescriptionForDisplay(productForm.fullDescription),
+      description: productForm.description || stripHtml(productForm.fullDescription).slice(0, 200),
       qualityPromises: productForm.qualityPromises.filter((p) => p.trim()),
       technicalSpecs: productForm.technicalSpecs.filter(
         (s) => s.parameter.trim() || s.standardRequirement.trim() || s.testingMethod.trim()
@@ -539,6 +592,13 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-primary truncate">{p.name}</p>
                     <p className="text-[10px] text-slate-400 uppercase">{p.tagName}</p>
+                    {p.collectionIds.length > 0 && (
+                      <p className="text-[10px] text-secondary truncate">
+                        {p.collectionIds
+                          .map((id) => collections.find((c) => c.id === id)?.name || id)
+                          .join(", ")}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -630,20 +690,61 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
                       className={inputClass}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className={labelClass}>Collection</label>
-                    <select
-                      value={productForm.collectionId}
-                      onChange={(e) => updateForm({ collectionId: e.target.value })}
-                      className={inputClass}
-                    >
-                      <option value="">Select collection</option>
-                      {collections.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className={labelClass}>Collections</label>
+                    {productForm.collectionIds.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {productForm.collectionIds.map((collectionId) => {
+                          const collection = collections.find((c) => c.id === collectionId);
+                          return (
+                            <span
+                              key={collectionId}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-semibold"
+                            >
+                              {collection?.name || collectionId}
+                              <button
+                                type="button"
+                                onClick={() => removeProductCollection(collectionId)}
+                                className="p-0.5 hover:bg-primary/10 rounded-full"
+                                aria-label={`Remove ${collection?.name || collectionId}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {availableCollections.length > 0 ? (
+                      <div className="flex gap-2">
+                        <select
+                          value={collectionDraft}
+                          onChange={(e) => setCollectionDraft(e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="">Select collection to add</option>
+                          {availableCollections.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={addProductCollection}
+                          disabled={!collectionDraft}
+                          className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold uppercase disabled:opacity-40 shrink-0"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ) : productForm.collectionIds.length > 0 ? (
+                      <p className="text-[10px] text-slate-400">
+                        All collections assigned. Remove one to add another.
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-amber-600">Add collections in step 1 first.</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <label className={labelClass}>Rice Age</label>
@@ -667,9 +768,14 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
                   </div>
                 </div>
                 <ImagePicker
-                  label="Product Image"
+                  label="Main Product Image (shown on card & home)"
                   value={productForm.image}
                   onChange={(url) => updateForm({ image: url, catalogImage: url })}
+                />
+                <MultiImagePicker
+                  label="Gallery Images (detail page only)"
+                  images={productForm.galleryImages}
+                  onChange={(galleryImages) => updateForm({ galleryImages })}
                 />
                 <div className="space-y-1">
                   <label className={labelClass}>Short Description (catalog card)</label>
@@ -680,15 +786,14 @@ export default function ProductCatalogAdmin({ onNotify }: ProductCatalogAdminPro
                     className={`${inputClass} resize-none`}
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className={labelClass}>Full Description (detail page)</label>
-                  <textarea
-                    value={productForm.fullDescription}
-                    onChange={(e) => updateForm({ fullDescription: e.target.value })}
-                    rows={4}
-                    className={`${inputClass} resize-none`}
-                  />
-                </div>
+                <RichTextEditor
+                  label="Full Description (detail page)"
+                  value={productForm.fullDescription}
+                  onChange={(html) => updateForm({ fullDescription: html })}
+                  editorKey={editingSlug || "new-product"}
+                  minHeight="160px"
+                  placeholder="Write your product description. Use Bold, Italic, or Underline for emphasis."
+                />
               </div>
 
               {/* Section 2 - Sensory */}

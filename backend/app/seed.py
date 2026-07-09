@@ -2,6 +2,8 @@
 
 from .default_seed import SECTIONS, PRODUCT_SLUGS, CATALOG_DEFAULTS
 
+META_KEY = "__meta__"
+
 
 def load_seed_data():
     from pathlib import Path
@@ -52,6 +54,13 @@ def _load_products_from_ts():
         return []
 
 
+def _meta_defaults():
+    from .models import SiteSection
+
+    meta, _ = SiteSection.objects.get_or_create(key=META_KEY, defaults={"data": {}})
+    return meta
+
+
 def ensure_footer_seeded():
     from .models import SiteSection
     from .default_seed import SECTIONS
@@ -70,34 +79,37 @@ def ensure_catalog_seeded():
 
 
 def ensure_seeded():
-    from .models import Product, SiteSection
+    """Create missing CMS sections on first run — never overwrite existing admin data."""
+    from .models import SiteSection
 
-    if SiteSection.objects.exists() and Product.objects.exists():
-        ensure_catalog_seeded()
-        ensure_footer_seeded()
-        return
+    ensure_catalog_seeded()
+    ensure_footer_seeded()
 
     data = load_seed_data()
     for key, value in data.get("sections", {}).items():
-        SiteSection.objects.update_or_create(key=key, defaults={"data": value})
-    for key, items in CATALOG_DEFAULTS.items():
-        SiteSection.objects.update_or_create(key=key, defaults={"data": items})
-    SiteSection.objects.update_or_create(
-        key="footerContent", defaults={"data": SECTIONS["footerContent"]}
-    )
-    for product in data.get("products", []):
-        slug = product.get("id") or product.get("slug")
-        if slug:
-            Product.objects.update_or_create(slug=slug, defaults={"data": product})
+        if not SiteSection.objects.filter(key=key).exists():
+            SiteSection.objects.create(key=key, data=value)
 
 
 def ensure_products_seeded():
-    """Seed products only if missing (safe to run when sections already exist)."""
+    """Seed default products only once on a fresh install."""
     from .models import Product
 
+    meta = _meta_defaults()
+
     if Product.objects.exists():
+        if not meta.data.get("products_seeded_once"):
+            meta.data = {**meta.data, "products_seeded_once": True}
+            meta.save(update_fields=["data"])
         return
+
+    if meta.data.get("products_seeded_once"):
+        return
+
     for product in load_seed_data().get("products", []):
         slug = product.get("id") or product.get("slug")
         if slug:
             Product.objects.update_or_create(slug=slug, defaults={"data": product})
+
+    meta.data = {**meta.data, "products_seeded_once": True}
+    meta.save(update_fields=["data"])
